@@ -87,7 +87,7 @@ describe("ThreadsView", () => {
   it("switches active thread when selecting another thread name", () => {
     render(<ThreadsView data={data} isLoading={false} entries={entries} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Throughline launch" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open thread Throughline launch" }));
 
     expect(screen.getByRole("heading", { name: "Throughline launch" })).toBeInTheDocument();
     expect(screen.getByText("1 captures")).toBeInTheDocument();

@@ -29,15 +29,14 @@ function resolveThreadEntries(row: ThroughlineThreadsView["rows"][number], entri
   return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
-export function ThreadsView({
-  data,
-  isLoading,
-  entries,
-}: {
+export interface ThreadsViewProps {
   data: ThroughlineThreadsView | null;
   isLoading: boolean;
   entries: ThroughlineEntry[];
-}) {
+}
+
+/** Renders the threads surface with selectable timeline points and detail panels. */
+export function ThreadsView({ data, isLoading, entries }: ThreadsViewProps) {
   const [activeThread, setActiveThread] = useState<string | null>(null);
   const [activePoint, setActivePoint] = useState<string | null>(null);
 
@@ -50,6 +49,32 @@ export function ThreadsView({
     const firstKey = threadKey(data.rows[0].kind, data.rows[0].id);
     setActiveThread((prev) => (prev ? prev : firstKey));
   }, [data]);
+
+  const activeRow = useMemo(() => {
+    if (!data?.rows.length) return null;
+    return data.rows.find((row) => threadKey(row.kind, row.id) === activeThread) ?? data.rows[0];
+  }, [data, activeThread]);
+
+  const activeEntries = useMemo(
+    () => (activeRow ? resolveThreadEntries(activeRow, entries) : []),
+    [activeRow, entries],
+  );
+
+  const activeSignals = useMemo(
+    () => activeEntries.filter((entry) => isEntrySignal(entry) || entry.isPivot).slice(0, 8),
+    [activeEntries],
+  );
+
+  const activeCapture = useMemo(
+    () => activeEntries.find((entry) => entry.id === activePoint) ?? null,
+    [activeEntries, activePoint],
+  );
+
+  const activeThreadKey = activeRow ? threadKey(activeRow.kind, activeRow.id) : null;
+
+  useEffect(() => {
+    setActivePoint((current) => (current && activeEntries.some((entry) => entry.id === current) ? current : null));
+  }, [activeEntries]);
 
   if (isLoading) {
     return (
@@ -79,14 +104,9 @@ export function ThreadsView({
       </main>
     );
   }
-
-  const activeRow = data.rows.find((row) => threadKey(row.kind, row.id) === activeThread) ?? data.rows[0];
-  const activeEntries = useMemo(() => resolveThreadEntries(activeRow, entries), [activeRow, entries]);
-  const activeSignals = useMemo(
-    () => activeEntries.filter((entry) => isEntrySignal(entry) || entry.isPivot).slice(0, 8),
-    [activeEntries],
-  );
-  const activeCapture = activeEntries.find((entry) => entry.id === activePoint) ?? null;
+  if (!activeRow) {
+    return null;
+  }
 
   return (
     <main className="main">
@@ -100,15 +120,22 @@ export function ThreadsView({
           </p>
         </div>
 
-        <div className="thread-list">
+        <div className="thread-list" role="list" aria-label="Thread list">
           {data.rows.map((row) => (
             <div
               key={`${row.kind}-${row.id}`}
               className={`thread-row ${row.kind} ${threadKey(row.kind, row.id) === activeThread ? "active" : ""}`}
+              role="listitem"
             >
               <div className="meta">
                 <div className="kind">{row.kind === "goal" ? "Life goal" : "Project"}</div>
-                <button className="name-btn" onClick={() => setActiveThread(threadKey(row.kind, row.id))} type="button">
+                <button
+                  className="name-btn"
+                  onClick={() => setActiveThread(threadKey(row.kind, row.id))}
+                  type="button"
+                  aria-pressed={threadKey(row.kind, row.id) === activeThread}
+                  aria-label={`Open thread ${row.name}`}
+                >
                   {row.name}
                 </button>
                 <div className="stats">
@@ -130,6 +157,8 @@ export function ThreadsView({
                     }}
                     type="button"
                     data-testid={`thread-point-${point.id}`}
+                    aria-label={`Open ${point.kind} from ${formatDate(point.created_at)} in ${row.name}`}
+                    aria-pressed={activePoint === point.id && activeThreadKey === threadKey(row.kind, row.id)}
                   />
                 ))}
               </div>
@@ -143,7 +172,7 @@ export function ThreadsView({
           ))}
         </div>
 
-        <div className="thread-detail-panel">
+        <div className="thread-detail-panel" aria-live="polite">
           <div className="head">
             <div className="meta">{activeRow.kind === "goal" ? "Life goal" : "Project"}</div>
             <h3>{activeRow.name}</h3>
@@ -169,7 +198,7 @@ export function ThreadsView({
           )}
 
           <div className="signals-block">
-            <div className="detail-label">Signals in this thread</div>
+            <div className="detail-label">Signals in this thread ({activeSignals.length})</div>
             {activeSignals.length === 0 ? (
               <div className="capture-detail muted">No signals marked in this thread yet.</div>
             ) : (
@@ -180,6 +209,8 @@ export function ThreadsView({
                     className={`signal-row ${entry.id === activePoint ? "active" : ""}`}
                     onClick={() => setActivePoint(entry.id)}
                     type="button"
+                    aria-pressed={entry.id === activePoint}
+                    aria-label={`Open signal from ${formatDayTime(entry.created_at)}`}
                   >
                     <span className="when">{formatDayTime(entry.created_at)}</span>
                     <span className={`txt ${entry.isPivot ? "pivot" : ""}`}>{entry.content || entry.pivotLabel || entry.to || "Pivot"}</span>

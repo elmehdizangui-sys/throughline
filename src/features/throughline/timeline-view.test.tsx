@@ -90,4 +90,14 @@ describe("TimelineView", () => {
     expect(onYearChange).toHaveBeenNthCalledWith(1, 2025);
     expect(onYearChange).toHaveBeenNthCalledWith(2, 2027);
   });
+
+  it("supports keyboard navigation across week bars", () => {
+    const onYearChange = vi.fn();
+    render(<TimelineView data={timelineData} isLoading={false} entries={entries} onYearChange={onYearChange} />);
+
+    const weekTwo = screen.getByTestId("timeline-week-2");
+    fireEvent.keyDown(weekTwo, { key: "ArrowLeft" });
+
+    expect(screen.getByTestId("timeline-week-meta")).toHaveTextContent("Week 1");
+  });
 });

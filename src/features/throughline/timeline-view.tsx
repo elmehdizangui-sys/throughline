@@ -17,17 +17,15 @@ function formatDayTime(value?: string) {
   });
 }
 
-export function TimelineView({
-  data,
-  isLoading,
-  entries,
-  onYearChange,
-}: {
+export interface TimelineViewProps {
   data: ThroughlineTimelineYear | null;
   isLoading: boolean;
   entries: ThroughlineEntry[];
   onYearChange: (nextYear: number) => void;
-}) {
+}
+
+/** Renders the yearly timeline surface with week, ribbon, and pivot details. */
+export function TimelineView({ data, isLoading, entries, onYearChange }: TimelineViewProps) {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
   useEffect(() => {
@@ -43,6 +41,26 @@ export function TimelineView({
     setSelectedWeek(firstActive?.week ?? data.weeks[0]?.week ?? null);
   }, [data]);
 
+  const selected = useMemo(() => {
+    if (!data?.weeks.length) return null;
+    return data.weeks.find((week) => week.week === selectedWeek) ?? data.weeks[0];
+  }, [data, selectedWeek]);
+
+  const selectedEntries = useMemo(() => {
+    if (!selected) return [];
+    return entries
+      .filter((entry) => {
+        const at = new Date(entry.created_at).getTime();
+        return at >= new Date(selected.start).getTime() && at <= new Date(selected.end).getTime();
+      })
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [entries, selected]);
+
+  const selectedSignals = useMemo(
+    () => selectedEntries.filter((entry) => isEntrySignal(entry) || entry.isPivot).slice(0, 10),
+    [selectedEntries],
+  );
+
   if (isLoading) {
     return (
       <main className="main">
@@ -57,7 +75,7 @@ export function TimelineView({
     );
   }
 
-  if (!data) {
+  if (!data || !selected) {
     return (
       <main className="main">
         <div className="view-shell">
@@ -71,21 +89,12 @@ export function TimelineView({
     );
   }
 
-  const selected = data.weeks.find((week) => week.week === selectedWeek) ?? data.weeks[0];
-  const selectedEntries = useMemo(
-    () =>
-      entries
-        .filter((entry) => {
-          const at = new Date(entry.created_at).getTime();
-          return at >= new Date(selected.start).getTime() && at <= new Date(selected.end).getTime();
-        })
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    [entries, selected.end, selected.start],
-  );
-  const selectedSignals = useMemo(
-    () => selectedEntries.filter((entry) => isEntrySignal(entry) || entry.isPivot).slice(0, 10),
-    [selectedEntries],
-  );
+  const moveWeekSelection = (offset: number) => {
+    const currentIndex = data.weeks.findIndex((week) => week.week === selected.week);
+    if (currentIndex < 0) return;
+    const nextIndex = Math.max(0, Math.min(data.weeks.length - 1, currentIndex + offset));
+    setSelectedWeek(data.weeks[nextIndex].week);
+  };
 
   return (
     <main className="main">
@@ -115,8 +124,25 @@ export function TimelineView({
               className={`bar ${data.nowWeek === week.week ? "now" : ""} ${selected.week === week.week ? "active" : ""}`}
               title={`W${week.week}: ${week.captures} captures`}
               onClick={() => setSelectedWeek(week.week)}
+              onKeyDown={(event) => {
+                if (event.key === "ArrowRight") {
+                  event.preventDefault();
+                  moveWeekSelection(1);
+                } else if (event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  moveWeekSelection(-1);
+                } else if (event.key === "Home") {
+                  event.preventDefault();
+                  setSelectedWeek(data.weeks[0].week);
+                } else if (event.key === "End") {
+                  event.preventDefault();
+                  setSelectedWeek(data.weeks[data.weeks.length - 1].week);
+                }
+              }}
               type="button"
               data-testid={`timeline-week-${week.week}`}
+              aria-label={`Select week ${week.week}`}
+              aria-pressed={selected.week === week.week}
             >
               <span className="base" style={{ height: `${Math.max(2, week.captures * 2)}px` }} />
               {week.signals > 0 ? <span className="sig" style={{ height: `${Math.max(2, week.signals * 2)}px` }} /> : null}
