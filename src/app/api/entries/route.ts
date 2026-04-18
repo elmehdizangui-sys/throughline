@@ -15,6 +15,12 @@ export async function POST(request: Request) {
       projects: payload.projects ?? [],
       tags: payload.tags ?? [],
       isCode: Boolean(payload.isCode),
+      signal: Boolean(payload.signal),
+      isPivot: Boolean(payload.isPivot),
+      from: payload.from,
+      to: payload.to,
+      slotKind: payload.slotKind,
+      pivotLabel: payload.pivotLabel,
     });
     return NextResponse.json(entry, { status: 201 });
   } catch (error) {

@@ -26,7 +26,7 @@ Throughline is a design-accurate implementation of the provided `project-design/
 ## Tech stack
 
 - Next.js (App Router) + TypeScript
-- Supabase Postgres (server-side access via service role key)
+- Supabase Postgres (configured via publishable key)
 - CSS ported from the source design with near 1:1 visual fidelity
 
 ## Setup
@@ -46,11 +46,12 @@ cp .env.example .env.local
 3. Fill `.env.local`:
 
 - `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 
 4. Create database schema in Supabase SQL Editor:
 
 - Run: `supabase/schema.sql`
+- If you already ran an older version, re-run the file to apply the `alter table ... add column if not exists` additions.
 
 5. Start the app:
 
@@ -60,14 +61,20 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Dynamic behavior and fallback
+## Dynamic behavior
 
-- If Supabase env vars are present, all data comes from Supabase.
-- On first boot, seed data is inserted automatically if tables are empty.
-- If env vars are missing, the app uses design seed data in memory so UI still works.
+- Goals, projects, and entries are loaded only from Supabase.
+- No in-memory seed goals/projects/entries are used.
+- If your tables are empty, the UI starts empty until you add data.
 
 ## API routes
 
 - `GET /api/bootstrap` - goals, projects, entries, minimap
 - `POST /api/entries` - create entry
-- `PATCH /api/entries/:id` - update starred/archived status
+- `PATCH /api/entries/:id` - update entry flags (`starred`, `archived`, `signal`, pivot metadata)
+- `POST /api/goals` - create a goal
+- `PATCH /api/goals/:id` - update a goal
+- `POST /api/projects` - create a project
+- `PATCH /api/projects/:id` - update a project
+- `GET /api/threads?months=6` - aggregated spine data for Threads view
+- `GET /api/timeline?year=2026` - aggregated year-line data for Timeline view

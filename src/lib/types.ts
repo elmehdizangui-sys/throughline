@@ -7,6 +7,7 @@ export type AccentName = "indigo" | "clay" | "moss" | "ink" | "rose";
 export type MainView = "feed" | "threads" | "map";
 export type FeedFilter = "all" | "starred" | "links" | "code";
 export type ContextFilterType = "goal" | "project" | "tag";
+export type ThreadKind = "goal" | "project";
 
 export interface ThroughlineLink {
   title: string;
@@ -18,13 +19,21 @@ export interface ThroughlineGoal {
   id: string;
   name: string;
   color?: string;
+  target_date?: string;
+  active_from?: string;
+  active_to?: string;
   order_index?: number;
 }
 
 export interface ThroughlineProject {
   id: string;
   name: string;
+  goal_id?: string | null;
+  color?: string;
   tag?: string;
+  target_date?: string;
+  active_from?: string;
+  active_to?: string;
   order_index?: number;
 }
 
@@ -39,10 +48,12 @@ export interface ThroughlineEntry {
   tags?: string[];
   isCode?: boolean;
   link?: ThroughlineLink | null;
+  signal?: boolean;
   isPivot?: boolean;
   from?: string;
   to?: string;
   slotKind?: string;
+  pivotLabel?: string;
 }
 
 export interface MinimapWeek {
@@ -79,4 +90,120 @@ export interface CreateEntryPayload {
   projects?: string[];
   tags?: string[];
   isCode?: boolean;
+  signal?: boolean;
+  isPivot?: boolean;
+  from?: string;
+  to?: string;
+  slotKind?: string;
+  pivotLabel?: string;
+}
+
+export interface PatchEntryPayload {
+  starred?: boolean;
+  archived?: boolean;
+  signal?: boolean;
+  isPivot?: boolean;
+  from?: string;
+  to?: string;
+  slotKind?: string;
+  pivotLabel?: string;
+}
+
+export interface CreateGoalPayload {
+  name: string;
+  color?: string;
+  target_date?: string;
+  active_from?: string;
+  active_to?: string;
+  order_index?: number;
+}
+
+export interface UpdateGoalPayload extends Partial<CreateGoalPayload> {}
+
+export interface CreateProjectPayload {
+  name: string;
+  goal_id?: string | null;
+  color?: string;
+  tag?: string;
+  target_date?: string;
+  active_from?: string;
+  active_to?: string;
+  order_index?: number;
+}
+
+export interface UpdateProjectPayload extends Partial<CreateProjectPayload> {}
+
+export interface ThroughlineSignalItem {
+  id: string;
+  created_at: string;
+  content: string;
+  tags: string[];
+  isPivot?: boolean;
+  pivotLabel?: string;
+}
+
+export interface ThroughlineThreadPoint {
+  id: string;
+  created_at: string;
+  position: number;
+  kind: "capture" | "signal" | "pivot";
+}
+
+export interface ThroughlineThreadRow {
+  id: string;
+  kind: ThreadKind;
+  parent_goal_id?: string | null;
+  name: string;
+  color?: string;
+  order_index: number;
+  captures: number;
+  signals: number;
+  pivots: number;
+  started_at?: string;
+  last_at?: string;
+  points: ThroughlineThreadPoint[];
+  latest_signal?: ThroughlineSignalItem;
+}
+
+export interface ThroughlineThreadsView {
+  from: string;
+  to: string;
+  months: number;
+  rows: ThroughlineThreadRow[];
+}
+
+export interface ThroughlineTimelineWeek {
+  week: number;
+  start: string;
+  end: string;
+  captures: number;
+  signals: number;
+  pivots: number;
+}
+
+export interface ThroughlineTimelinePivot {
+  id: string;
+  created_at: string;
+  position: number;
+  label: string;
+}
+
+export interface ThroughlineTimelineRibbon {
+  id: string;
+  kind: ThreadKind;
+  parent_goal_id?: string | null;
+  label: string;
+  color?: string;
+  start: string;
+  end: string;
+  startPosition: number;
+  endPosition: number;
+}
+
+export interface ThroughlineTimelineYear {
+  year: number;
+  nowWeek: number;
+  weeks: ThroughlineTimelineWeek[];
+  pivots: ThroughlineTimelinePivot[];
+  ribbons: ThroughlineTimelineRibbon[];
 }

@@ -139,8 +139,10 @@ a {
 }
 
 .wordmark .name em {
+  font-family: var(--font-instrument-serif), var(--f-display);
   font-style: italic;
   color: var(--accent);
+  font-weight: 400;
 }
 
 .nav {
@@ -249,7 +251,7 @@ a {
   border: 1px solid var(--rule);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: var(--card);
+  background: var(--paper);
 }
 
 .slot {
@@ -1542,4 +1544,232 @@ html[data-layout="sidebar"] .main {
   html[data-layout="sidebar"] .sidebar {
     display: none;
   }
+}
+
+.view-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.view-head h1 {
+  margin: 0;
+  font-family: var(--f-display);
+  font-size: 34px;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.view-head h1 em {
+  font-family: var(--font-instrument-serif), var(--f-display);
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.deck-copy {
+  margin: 8px 0 0;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+
+.thread-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.thread-row {
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 14px;
+}
+
+.thread-row.project {
+  margin-left: 18px;
+}
+
+.thread-row .meta .kind {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.thread-row .meta .name {
+  margin-top: 2px;
+  font-family: var(--f-display);
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.thread-row .meta .stats {
+  margin-top: 4px;
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.thread-row .line {
+  position: relative;
+  height: 32px;
+  margin-top: 10px;
+}
+
+.thread-row .line .track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--rule-strong);
+}
+
+.thread-row .line .dot {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-4);
+}
+
+.thread-row .line .dot.signal {
+  width: 10px;
+  height: 10px;
+  background: var(--star);
+  box-shadow: 0 0 0 3px var(--star-soft);
+}
+
+.thread-row .line .dot.pivot {
+  width: 2px;
+  height: 18px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+
+.thread-row .preview {
+  margin-top: 8px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.thread-row .preview .when {
+  display: inline-block;
+  margin-right: 8px;
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.year-bars-lite {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 14px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--card);
+  overflow-x: auto;
+}
+
+.year-bars-lite .bar {
+  min-width: 10px;
+  width: 10px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 1px;
+  align-items: stretch;
+}
+
+.year-bars-lite .bar .base {
+  display: block;
+  border-radius: 2px;
+  background: var(--ink-3);
+  opacity: 0.5;
+}
+
+.year-bars-lite .bar .sig {
+  display: block;
+  border-radius: 2px;
+  background: var(--star);
+}
+
+.year-bars-lite .bar.now .base {
+  opacity: 1;
+}
+
+.ribbon-list {
+  display: grid;
+  gap: 6px;
+}
+
+.ribbon-list .ribbon {
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 6px 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: var(--paper-2);
+}
+
+.ribbon-list .ribbon.project {
+  margin-left: 16px;
+}
+
+.ribbon-list .ribbon .label {
+  font-family: var(--f-display);
+}
+
+.ribbon-list .ribbon .range {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.pivot-list {
+  display: grid;
+  gap: 8px;
+}
+
+.pivot-item {
+  border-left: 2px solid var(--accent);
+  background: var(--paper-2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
+}
+
+.pivot-item .when {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+
+.pivot-item .txt {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.empty-inline {
+  color: var(--ink-4);
+  font-size: 13px;
 }

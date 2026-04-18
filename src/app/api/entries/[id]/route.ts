@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { patchEntry } from "@/lib/throughline-service";
-import type { ThroughlineEntry } from "@/lib/types";
+import type { PatchEntryPayload } from "@/lib/types";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -9,7 +9,7 @@ interface Params {
 export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id } = await params;
-    const body = (await request.json()) as Partial<Pick<ThroughlineEntry, "starred" | "archived">>;
+    const body = (await request.json()) as PatchEntryPayload;
     const entry = await patchEntry(id, body);
     return NextResponse.json(entry ?? { id, ...body });
   } catch (error) {
