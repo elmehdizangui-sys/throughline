@@ -281,6 +281,11 @@
   color: var(--star);
 }
 
+.action.promote.on {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+
 html[data-entry="card"] .entry {
   background: var(--card);
   border: 1px solid var(--rule);

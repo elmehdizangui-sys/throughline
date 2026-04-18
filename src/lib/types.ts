@@ -94,6 +94,7 @@ export interface CreateEntryPayload {
   projects?: string[];
   tags?: string[];
   isCode?: boolean;
+  link?: ThroughlineLink | null;
   signal?: boolean;
   isPivot?: boolean;
   from?: string;

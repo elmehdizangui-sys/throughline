@@ -46,3 +46,14 @@
   color: var(--accent-ink);
   border-color: color-mix(in oklab, var(--accent) 28%, transparent);
 }
+
+.entry .meta .signal {
+  border: 1px solid color-mix(in oklab, var(--star) 28%, transparent);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--star) 70%, var(--ink));
+  background: var(--star-soft);
+}

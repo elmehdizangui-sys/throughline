@@ -33,7 +33,7 @@ interface DbEntryRow {
   to_text: string | null;
   slot_kind: string | null;
   pivot_label: string | null;
-  priority: string | null;
+  priority?: string | null;
 }
 
 interface DbGoalRow {
@@ -83,6 +83,13 @@ function mapEntryRow(row: DbEntryRow): ThroughlineEntry {
 function parsePriority(value: string | null | undefined): EntryPriority | undefined {
   if (value === "dunya" || value === "akhirah") return value;
   return undefined;
+}
+
+function isMissingPriorityColumnError(error: { message?: string; details?: string | null; hint?: string | null; code?: string } | null) {
+  if (!error) return false;
+  if (error.code === "42703" || error.code?.toLowerCase() === "pgrst204") return true;
+  const haystack = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
+  return haystack.includes("priority") && haystack.includes("column");
 }
 
 function mapGoalRow(row: DbGoalRow): ThroughlineGoal {
@@ -204,6 +211,7 @@ export async function createEntry(payload: CreateEntryPayload): Promise<Throughl
     projects: payload.projects ?? [],
     tags,
     isCode: Boolean(payload.isCode),
+    link: payload.link ?? null,
     signal: Boolean(payload.signal),
     isPivot: Boolean(payload.isPivot),
     from: payload.from,
@@ -214,27 +222,37 @@ export async function createEntry(payload: CreateEntryPayload): Promise<Throughl
   };
 
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
+  const insertPayload: Record<string, unknown> = {
+    id: record.id,
+    content: record.content,
+    goals: record.goals,
+    projects: record.projects,
+    tags: record.tags,
+    is_code: record.isCode,
+    link: record.link,
+    signal: record.signal,
+    is_pivot: record.isPivot,
+    from_text: record.from,
+    to_text: record.to,
+    slot_kind: record.slotKind,
+    pivot_label: record.pivotLabel,
+    starred: false,
+    archived: false,
+  };
+  if (record.priority) {
+    insertPayload.priority = record.priority;
+  }
+
+  let { data, error } = await supabase
     .from("throughline_entries")
-    .insert({
-      id: record.id,
-      content: record.content,
-      goals: record.goals,
-      projects: record.projects,
-      tags: record.tags,
-      is_code: record.isCode,
-      signal: record.signal,
-      is_pivot: record.isPivot,
-      from_text: record.from,
-      to_text: record.to,
-      slot_kind: record.slotKind,
-      pivot_label: record.pivotLabel,
-      priority: record.priority ?? null,
-      starred: false,
-      archived: false,
-    })
+    .insert(insertPayload)
     .select("*")
     .single();
+
+  if (error && isMissingPriorityColumnError(error) && "priority" in insertPayload) {
+    const { priority: _priority, ...fallbackInsertPayload } = insertPayload;
+    ({ data, error } = await supabase.from("throughline_entries").insert(fallbackInsertPayload).select("*").single());
+  }
 
   if (error) throw error;
   return mapEntryRow(data as DbEntryRow);

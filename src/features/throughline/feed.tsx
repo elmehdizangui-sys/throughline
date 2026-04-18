@@ -3,12 +3,37 @@ import type {
   CreateEntryPayload,
   EntryPriority,
   FeedFilter,
+  ThroughlineLink,
   ThroughlineContextFilter,
   ThroughlineEntry,
   ThroughlineGoal,
   ThroughlineProject,
 } from "@/lib/types";
 import { CodeBlock, extractTags, formatTime, Icon, renderContent } from "@/features/throughline/shared";
+
+function normalizeHttpUrl(raw: string) {
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const parsed = new URL(withScheme);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function firstLinkFromText(text: string): ThroughlineLink | undefined {
+  const match = text.match(/https?:\/\/[^\s]+/i);
+  if (!match) return undefined;
+  const normalized = normalizeHttpUrl(match[0]);
+  if (!normalized) return undefined;
+  const parsed = new URL(normalized);
+  return {
+    url: normalized,
+    title: parsed.hostname,
+    desc: "Added from capture",
+  };
+}
 
 function FilterBar({
   filter,
@@ -45,12 +70,16 @@ function Entry({
   goals,
   projects,
   onStar,
+  onPromote,
+  onMarkPivot,
   onFilter,
 }: {
   entry: ThroughlineEntry;
   goals: ThroughlineGoal[];
   projects: ThroughlineProject[];
   onStar: (id: string) => void;
+  onPromote: (id: string) => void;
+  onMarkPivot: (id: string) => void;
   onFilter: (filter: ThroughlineContextFilter) => void;
 }) {
   const goalObjects = (entry.goals ?? [])
@@ -65,11 +94,12 @@ function Entry({
     <article className={`entry ${entry.starred ? "starred" : ""}${entry.archived ? " archived" : ""}`}>
       <span className="timestamp">{formatTime(entry.created_at)}</span>
       <span className="dot" />
-      {(entry.priority || goalObjects.length > 0 || projectObjects.length > 0 || tags.length > 0) && (
+      {(entry.priority || entry.signal || goalObjects.length > 0 || projectObjects.length > 0 || tags.length > 0) && (
         <div className="meta">
           {entry.priority ? (
             <span className={`priority ${entry.priority}`}>{entry.priority === "akhirah" ? "Akhirah - Legacy" : "Dunya - Immediate"}</span>
           ) : null}
+          {entry.signal ? <span className="signal">Signal</span> : null}
           {goalObjects.map((goal) => (
             <span key={goal.id} className="goal" onClick={() => onFilter({ type: "goal", id: goal.id, label: goal.name })}>
               ◎ {goal.name}
@@ -98,7 +128,7 @@ function Entry({
             <div className="thumb">link.preview</div>
             <div className="txt">
               <div className="h">{entry.link.title}</div>
-              <div className="d">{entry.link.desc}</div>
+              {entry.link.desc ? <div className="d">{entry.link.desc}</div> : null}
               <div className="u">{entry.link.url}</div>
             </div>
           </div>
@@ -108,8 +138,11 @@ function Entry({
         <button className={`action star ${entry.starred ? "on" : ""}`} onClick={() => onStar(entry.id)} type="button">
           <Icon.Star filled={entry.starred} /> {entry.starred ? "Starred" : "Star"}
         </button>
-        <button className="action" type="button">
-          Promote ↑
+        <button className={`action promote ${entry.signal ? "on" : ""}`} onClick={() => onPromote(entry.id)} type="button">
+          {entry.signal ? "Promoted" : "Promote ↑"}
+        </button>
+        <button className="action" onClick={() => onMarkPivot(entry.id)} type="button">
+          Mark as pivot
         </button>
         <button className="action" type="button">
           Reply
@@ -123,13 +156,23 @@ function Entry({
 }
 
 function PivotMarker({ pivot }: { pivot: ThroughlineEntry }) {
+  const hasTransition = Boolean(pivot.from && pivot.to);
+  const label = pivot.pivotLabel || pivot.to || pivot.content || "Pivot";
+
   return (
     <div className="pivot">
       <div className="head">
-        Pivot - {new Date(pivot.created_at).toLocaleDateString([], { month: "short", day: "numeric" })} - {pivot.slotKind}
+        Pivot - {new Date(pivot.created_at).toLocaleDateString([], { month: "short", day: "numeric" })}
+        {pivot.slotKind ? ` - ${pivot.slotKind}` : ""}
       </div>
       <div className="body">
-        <span className="from">{pivot.from}</span> -&gt; <span className="to">{pivot.to}</span>
+        {hasTransition ? (
+          <>
+            <span className="from">{pivot.from}</span> -&gt; <span className="to">{pivot.to}</span>
+          </>
+        ) : (
+          <span className="to">{label}</span>
+        )}
       </div>
     </div>
   );
@@ -185,6 +228,16 @@ function Capture({
 
   const tags = useMemo(() => extractTags(value), [value]);
   const selectedCount = selectedGoals.length + selectedProjects.length;
+  const link = useMemo(() => firstLinkFromText(value), [value]);
+
+  const insertLink = useCallback(() => {
+    const raw = window.prompt("Paste a URL to add");
+    if (!raw) return;
+    const normalized = normalizeHttpUrl(raw.trim());
+    if (!normalized) return;
+    setValue((state) => `${state}${state && !state.endsWith(" ") && !state.endsWith("\n") ? " " : ""}${normalized}`);
+    textAreaRef.current?.focus();
+  }, []);
 
   const submit = useCallback(() => {
     if (!value.trim()) return;
@@ -194,6 +247,7 @@ function Capture({
       projects: selectedProjects,
       tags,
       isCode,
+      link: firstLinkFromText(value.trim()),
       priority: priority ?? undefined,
     });
     setValue("");
@@ -251,7 +305,7 @@ function Capture({
         </div>
       </div>
 
-      {(selectedCount > 0 || tags.length > 0) && (
+      {(selectedCount > 0 || tags.length > 0 || isCode || link) && (
         <div className="capture-chips">
           {goals
             .filter((goal) => selectedGoals.includes(goal.id))
@@ -278,6 +332,8 @@ function Capture({
               #{tag}
             </span>
           ))}
+          {isCode ? <span className="chip selected">Code mode on</span> : null}
+          {link ? <span className="chip selected">Link ready</span> : null}
         </div>
       )}
 
@@ -294,7 +350,7 @@ function Capture({
           >
             <Icon.Code />
           </button>
-          <button className="tool-btn" title="Insert link" type="button">
+          <button className={`tool-btn ${link ? "active" : ""}`} title="Insert link" type="button" onClick={insertLink}>
             <Icon.Link />
           </button>
           <button
@@ -376,6 +432,8 @@ interface FeedViewProps {
   onSetContextFilter: (filter: ThroughlineContextFilter) => void;
   onAddEntry: (payload: CreateEntryPayload) => void;
   onToggleStar: (entryId: string) => void;
+  onTogglePromote: (entryId: string) => void;
+  onMarkPivot: (entryId: string) => void;
 }
 
 export function FeedView({
@@ -392,6 +450,8 @@ export function FeedView({
   onSetContextFilter,
   onAddEntry,
   onToggleStar,
+  onTogglePromote,
+  onMarkPivot,
 }: FeedViewProps) {
   return (
     <main className="main">
@@ -438,7 +498,16 @@ export function FeedView({
               entry.isPivot ? (
                 <PivotMarker key={entry.id} pivot={entry} />
               ) : (
-                <Entry key={entry.id} entry={entry} goals={goals} projects={projects} onStar={onToggleStar} onFilter={onSetContextFilter} />
+                <Entry
+                  key={entry.id}
+                  entry={entry}
+                  goals={goals}
+                  projects={projects}
+                  onStar={onToggleStar}
+                  onPromote={onTogglePromote}
+                  onMarkPivot={onMarkPivot}
+                  onFilter={onSetContextFilter}
+                />
               ),
             )}
           </div>

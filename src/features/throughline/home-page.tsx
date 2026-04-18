@@ -207,6 +207,81 @@ export function ThroughlineHomePage() {
     [entries],
   );
 
+  const togglePromote = useCallback(
+    async (id: string) => {
+      const current = entries.find((entry) => entry.id === id);
+      if (!current) return;
+
+      const nextSignal = !Boolean(current.signal);
+      setEntries((state) => state.map((entry) => (entry.id === id ? { ...entry, signal: nextSignal } : entry)));
+
+      try {
+        const response = await fetch(`/api/entries/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ signal: nextSignal }),
+        });
+
+        if (!response.ok) {
+          setEntries((state) => state.map((entry) => (entry.id === id ? { ...entry, signal: !nextSignal } : entry)));
+        }
+      } catch {
+        setEntries((state) => state.map((entry) => (entry.id === id ? { ...entry, signal: !nextSignal } : entry)));
+      }
+    },
+    [entries],
+  );
+
+  const markAsPivot = useCallback(
+    async (id: string) => {
+      const current = entries.find((entry) => entry.id === id);
+      if (!current) return;
+
+      const nextPivot = !Boolean(current.isPivot);
+      const defaultLabel = current.pivotLabel || current.content || "Pivot";
+      const defaultSlot =
+        current.slotKind || (current.projects && current.projects.length > 0 ? "project" : current.goals && current.goals.length > 0 ? "goal" : "capture");
+      const optimistic = {
+        isPivot: nextPivot,
+        pivotLabel: nextPivot ? defaultLabel : undefined,
+        slotKind: nextPivot ? defaultSlot : undefined,
+      };
+
+      setEntries((state) => state.map((entry) => (entry.id === id ? { ...entry, ...optimistic } : entry)));
+
+      try {
+        const response = await fetch(`/api/entries/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            isPivot: nextPivot,
+            pivotLabel: nextPivot ? defaultLabel : null,
+            slotKind: nextPivot ? defaultSlot : null,
+          }),
+        });
+
+        if (!response.ok) {
+          setEntries((state) =>
+            state.map((entry) =>
+              entry.id === id
+                ? { ...entry, isPivot: !nextPivot, pivotLabel: current.pivotLabel, slotKind: current.slotKind }
+                : entry,
+            ),
+          );
+        }
+      } catch {
+        setEntries((state) =>
+          state.map((entry) =>
+            entry.id === id
+              ? { ...entry, isPivot: !nextPivot, pivotLabel: current.pivotLabel, slotKind: current.slotKind }
+              : entry,
+          ),
+        );
+      }
+    },
+    [entries],
+  );
+
   const onSlotClick = (type: "goal" | "project", id: string) => {
     const source = type === "goal" ? goals.find((goal) => goal.id === id) : projects.find((project) => project.id === id);
     if (!source) return;
@@ -312,14 +387,20 @@ export function ThroughlineHomePage() {
         if (!decision) return entry;
         if (decision === "star") return { ...entry, starred: true };
         if (decision === "archive") return { ...entry, archived: true };
+        if (decision === "promote") return { ...entry, signal: true };
         return entry;
       }),
     );
 
     void Promise.all(
       Object.entries(decisions).map(async ([id, decision]) => {
-        if (decision === "skip" || decision === "promote") return;
-        const patch = decision === "star" ? { starred: true } : { archived: true };
+        if (decision === "skip") return;
+        const patch =
+          decision === "star"
+            ? { starred: true }
+            : decision === "archive"
+              ? { archived: true }
+              : { signal: true };
         await fetch(`/api/entries/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -377,6 +458,8 @@ export function ThroughlineHomePage() {
           onSetContextFilter={(nextFilter) => setContextFilter(nextFilter)}
           onAddEntry={addEntry}
           onToggleStar={toggleStar}
+          onTogglePromote={togglePromote}
+          onMarkPivot={markAsPivot}
         />
       ) : null}
       {view === "threads" ? <ThreadsView data={threadsData} isLoading={threadsLoading} entries={entries} /> : null}
