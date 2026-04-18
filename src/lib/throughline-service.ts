@@ -4,6 +4,7 @@ import type {
   CreateGoalPayload,
   CreateEntryPayload,
   CreateProjectPayload,
+  EntryPriority,
   PatchEntryPayload,
   ThroughlineBootstrap,
   ThroughlineEntry,
@@ -32,6 +33,7 @@ interface DbEntryRow {
   to_text: string | null;
   slot_kind: string | null;
   pivot_label: string | null;
+  priority: string | null;
 }
 
 interface DbGoalRow {
@@ -74,7 +76,13 @@ function mapEntryRow(row: DbEntryRow): ThroughlineEntry {
     to: row.to_text ?? undefined,
     slotKind: row.slot_kind ?? undefined,
     pivotLabel: row.pivot_label ?? undefined,
+    priority: parsePriority(row.priority),
   };
+}
+
+function parsePriority(value: string | null | undefined): EntryPriority | undefined {
+  if (value === "dunya" || value === "akhirah") return value;
+  return undefined;
 }
 
 function mapGoalRow(row: DbGoalRow): ThroughlineGoal {
@@ -202,6 +210,7 @@ export async function createEntry(payload: CreateEntryPayload): Promise<Throughl
     to: payload.to,
     slotKind: payload.slotKind,
     pivotLabel: payload.pivotLabel,
+    priority: parsePriority(payload.priority),
   };
 
   const supabase = getSupabaseAdmin();
@@ -220,6 +229,7 @@ export async function createEntry(payload: CreateEntryPayload): Promise<Throughl
       to_text: record.to,
       slot_kind: record.slotKind,
       pivot_label: record.pivotLabel,
+      priority: record.priority ?? null,
       starred: false,
       archived: false,
     })
@@ -243,6 +253,9 @@ export async function patchEntry(
   if (typeof patch.to === "string" || patch.to === null) updatePayload.to_text = patch.to ?? null;
   if (typeof patch.slotKind === "string" || patch.slotKind === null) updatePayload.slot_kind = patch.slotKind ?? null;
   if (typeof patch.pivotLabel === "string" || patch.pivotLabel === null) updatePayload.pivot_label = patch.pivotLabel ?? null;
+  if (patch.priority === "dunya" || patch.priority === "akhirah" || patch.priority === null) {
+    updatePayload.priority = patch.priority ?? null;
+  }
 
   if (Object.keys(updatePayload).length === 0) {
     return null;

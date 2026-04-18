@@ -43,7 +43,8 @@ create table if not exists throughline_entries (
   from_text text,
   to_text text,
   slot_kind text,
-  pivot_label text
+  pivot_label text,
+  priority text check (priority in ('dunya', 'akhirah'))
 );
 
 alter table throughline_goals
@@ -60,7 +61,22 @@ alter table throughline_projects
 
 alter table throughline_entries
   add column if not exists signal boolean not null default false,
-  add column if not exists pivot_label text;
+  add column if not exists pivot_label text,
+  add column if not exists priority text;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'throughline_entries_priority_check'
+  ) then
+    alter table throughline_entries
+      add constraint throughline_entries_priority_check
+      check (priority in ('dunya', 'akhirah'));
+  end if;
+end
+$$;
 
 create index if not exists throughline_entries_created_at_idx on throughline_entries (created_at desc);
 create index if not exists throughline_entries_starred_idx on throughline_entries (starred);

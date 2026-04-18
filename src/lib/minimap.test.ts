@@ -23,5 +23,21 @@ describe("buildMinimap", () => {
     expect(minimap).toHaveLength(2);
     expect(minimap[0].level).toBe(1);
     expect(minimap[0].pivot).toBe(true);
+    expect(minimap[0].captures).toBe(3);
+    expect(minimap[0].signals).toBe(0);
+  });
+
+  it("weights starred and signal entries more than regular captures", () => {
+    const entries: ThroughlineEntry[] = [
+      { id: "e1", content: "capture", created_at: isoDaysAgo(1) },
+      { id: "e2", content: "starred", created_at: isoDaysAgo(2), starred: true },
+    ];
+
+    const minimap = buildMinimap(entries, 1);
+
+    expect(minimap).toHaveLength(1);
+    expect(minimap[0].captures).toBe(2);
+    expect(minimap[0].signals).toBe(1);
+    expect(minimap[0].level).toBe(2);
   });
 });

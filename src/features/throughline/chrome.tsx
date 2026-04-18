@@ -290,7 +290,13 @@ export function Minimap({ data }: { data: MinimapWeek[] }) {
     <div className="minimap">
       <div className="title">8 wks - scroll back</div>
       {data.map((week, index) => (
-        <div key={`${week.week}-${index}`} className="wk">
+        <div
+          key={`${week.week}-${index}`}
+          className="wk"
+          title={`${week.captures ?? 0} captures · ${week.signals ?? 0} signals${
+            week.level === 3 && (week.signals ?? 0) === 0 && !week.pivot ? " · Busy-work risk" : ""
+          }`}
+        >
           <span className="blocks">
             {[0, 1, 2, 3, 4, 5, 6].map((day) => {
               const levelClass =

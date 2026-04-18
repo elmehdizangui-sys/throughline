@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   CreateEntryPayload,
+  EntryPriority,
   FeedFilter,
   ThroughlineContextFilter,
   ThroughlineEntry,
@@ -64,8 +65,11 @@ function Entry({
     <article className={`entry ${entry.starred ? "starred" : ""}${entry.archived ? " archived" : ""}`}>
       <span className="timestamp">{formatTime(entry.created_at)}</span>
       <span className="dot" />
-      {(goalObjects.length > 0 || projectObjects.length > 0 || tags.length > 0) && (
+      {(entry.priority || goalObjects.length > 0 || projectObjects.length > 0 || tags.length > 0) && (
         <div className="meta">
+          {entry.priority ? (
+            <span className={`priority ${entry.priority}`}>{entry.priority === "akhirah" ? "Akhirah - Legacy" : "Dunya - Immediate"}</span>
+          ) : null}
           {goalObjects.map((goal) => (
             <span key={goal.id} className="goal" onClick={() => onFilter({ type: "goal", id: goal.id, label: goal.name })}>
               ◎ {goal.name}
@@ -146,6 +150,7 @@ function Capture({
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [isCode, setIsCode] = useState(false);
+  const [priority, setPriority] = useState<EntryPriority | null>(null);
 
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
@@ -189,12 +194,14 @@ function Capture({
       projects: selectedProjects,
       tags,
       isCode,
+      priority: priority ?? undefined,
     });
     setValue("");
     setSelectedGoals([]);
     setSelectedProjects([]);
     setIsCode(false);
-  }, [isCode, onAdd, selectedGoals, selectedProjects, tags, value]);
+    setPriority(null);
+  }, [isCode, onAdd, priority, selectedGoals, selectedProjects, tags, value]);
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -221,6 +228,28 @@ function Capture({
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={onKeyDown}
       />
+
+      <div className="capture-intention">
+        <div className="capture-intention-label">Intention check: is this for Dunya (Immediate) or Akhirah (Legacy)?</div>
+        <div className="capture-intention-toggle">
+          <button
+            className={priority === "dunya" ? "on" : ""}
+            onClick={() => setPriority((state) => (state === "dunya" ? null : "dunya"))}
+            type="button"
+            aria-pressed={priority === "dunya"}
+          >
+            Dunya
+          </button>
+          <button
+            className={priority === "akhirah" ? "on" : ""}
+            onClick={() => setPriority((state) => (state === "akhirah" ? null : "akhirah"))}
+            type="button"
+            aria-pressed={priority === "akhirah"}
+          >
+            Akhirah
+          </button>
+        </div>
+      </div>
 
       {(selectedCount > 0 || tags.length > 0) && (
         <div className="capture-chips">

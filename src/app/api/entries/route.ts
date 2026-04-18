@@ -2,11 +2,18 @@ import { NextResponse } from "next/server";
 import { createEntry } from "@/lib/throughline-service";
 import type { CreateEntryPayload } from "@/lib/types";
 
+function isValidPriority(value: unknown): value is CreateEntryPayload["priority"] {
+  return value === undefined || value === "dunya" || value === "akhirah";
+}
+
 export async function POST(request: Request) {
   try {
     const payload = (await request.json()) as CreateEntryPayload;
     if (!payload.content || !payload.content.trim()) {
       return NextResponse.json({ message: "Content is required." }, { status: 400 });
+    }
+    if (!isValidPriority(payload.priority)) {
+      return NextResponse.json({ message: "Priority must be either 'dunya' or 'akhirah'." }, { status: 400 });
     }
 
     const entry = await createEntry({
@@ -21,6 +28,7 @@ export async function POST(request: Request) {
       to: payload.to,
       slotKind: payload.slotKind,
       pivotLabel: payload.pivotLabel,
+      priority: payload.priority,
     });
     return NextResponse.json(entry, { status: 201 });
   } catch (error) {

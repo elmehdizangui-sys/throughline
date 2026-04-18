@@ -110,6 +110,19 @@ export function WeeklyReview({
               <div style={{ color: "var(--ink-3)", fontSize: 14, maxWidth: 360 }}>
                 The starred entries become your backbone. Archives fold away quietly.
               </div>
+              <div
+                style={{
+                  color: "var(--ink-2)",
+                  fontSize: 14,
+                  maxWidth: 420,
+                  padding: "10px 12px",
+                  border: "1px dashed var(--rule-strong)",
+                  borderRadius: 10,
+                  background: "var(--paper-2)",
+                }}
+              >
+                Reflective question: Which of these signals brought you closer to your Fitrah?
+              </div>
               <div className="stats">
                 <div>
                   <strong>{starCount}</strong>Starred

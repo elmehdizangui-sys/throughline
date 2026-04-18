@@ -8,6 +8,7 @@ export type MainView = "feed" | "threads" | "map";
 export type FeedFilter = "all" | "starred" | "links" | "code";
 export type ContextFilterType = "goal" | "project" | "tag";
 export type ThreadKind = "goal" | "project";
+export type EntryPriority = "dunya" | "akhirah";
 
 export interface ThroughlineLink {
   title: string;
@@ -54,12 +55,15 @@ export interface ThroughlineEntry {
   to?: string;
   slotKind?: string;
   pivotLabel?: string;
+  priority?: EntryPriority;
 }
 
 export interface MinimapWeek {
   week: string;
   level: 0 | 1 | 2 | 3;
   pivot?: boolean;
+  captures?: number;
+  signals?: number;
 }
 
 export interface ThroughlineTweaks {
@@ -96,6 +100,7 @@ export interface CreateEntryPayload {
   to?: string;
   slotKind?: string;
   pivotLabel?: string;
+  priority?: EntryPriority;
 }
 
 export interface PatchEntryPayload {
@@ -103,10 +108,11 @@ export interface PatchEntryPayload {
   archived?: boolean;
   signal?: boolean;
   isPivot?: boolean;
-  from?: string;
-  to?: string;
-  slotKind?: string;
-  pivotLabel?: string;
+  from?: string | null;
+  to?: string | null;
+  slotKind?: string | null;
+  pivotLabel?: string | null;
+  priority?: EntryPriority | null;
 }
 
 export interface CreateGoalPayload {

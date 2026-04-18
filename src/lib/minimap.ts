@@ -11,10 +11,12 @@ function isoWeekLabel(date: Date) {
   return `W${String(weekNo).padStart(2, "0")}`;
 }
 
-function activityLevel(count: number): MinimapWeek["level"] {
-  if (count >= 7) return 3;
-  if (count >= 4) return 2;
-  if (count >= 1) return 1;
+function activityLevel(captures: number, signals: number): MinimapWeek["level"] {
+  // Signals carry more coaching weight than raw capture volume.
+  const weightedScore = captures + signals * 2;
+  if (weightedScore >= 7) return 3;
+  if (weightedScore >= 4) return 2;
+  if (weightedScore >= 1) return 1;
   return 0;
 }
 
@@ -23,15 +25,18 @@ export function buildMinimap(entries: ThroughlineEntry[], weeks = 8): MinimapWee
     string,
     {
       captures: number;
+      signals: number;
       pivot: boolean;
     }
   >();
 
   for (const entry of entries) {
     const key = isoWeekLabel(new Date(entry.created_at));
-    const prev = weekMap.get(key) ?? { captures: 0, pivot: false };
+    const prev = weekMap.get(key) ?? { captures: 0, signals: 0, pivot: false };
+    const isSignal = Boolean(entry.signal || entry.starred);
     weekMap.set(key, {
       captures: entry.isPivot ? prev.captures : prev.captures + 1,
+      signals: isSignal ? prev.signals + 1 : prev.signals,
       pivot: prev.pivot || Boolean(entry.isPivot),
     });
   }
@@ -42,11 +47,13 @@ export function buildMinimap(entries: ThroughlineEntry[], weeks = 8): MinimapWee
     const date = new Date(now);
     date.setDate(date.getDate() - i * 7);
     const key = isoWeekLabel(date);
-    const val = weekMap.get(key) ?? { captures: 0, pivot: false };
+    const val = weekMap.get(key) ?? { captures: 0, signals: 0, pivot: false };
     result.push({
       week: key,
-      level: activityLevel(val.captures),
+      level: activityLevel(val.captures, val.signals),
       pivot: val.pivot || undefined,
+      captures: val.captures,
+      signals: val.signals,
     });
   }
   return result;

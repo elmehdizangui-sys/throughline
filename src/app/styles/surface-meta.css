@@ -1,0 +1,48 @@
+.filter-context {
+  margin: 24px 0 14px;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  animation: fadeSlide 0.2s var(--e);
+}
+
+.filter-context .close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.6;
+  padding: 0 4px;
+}
+
+.filter-context .close:hover {
+  opacity: 1;
+}
+
+.entry .meta .priority {
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.entry .meta .priority.dunya {
+  background: var(--paper-2);
+  color: var(--ink-3);
+}
+
+.entry .meta .priority.akhirah {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  border-color: color-mix(in oklab, var(--accent) 28%, transparent);
+}

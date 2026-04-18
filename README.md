@@ -70,8 +70,8 @@ Open [http://localhost:3000](http://localhost:3000).
 ## API routes
 
 - `GET /api/bootstrap` - goals, projects, entries, minimap
-- `POST /api/entries` - create entry
-- `PATCH /api/entries/:id` - update entry flags (`starred`, `archived`, `signal`, pivot metadata)
+- `POST /api/entries` - create entry (`priority`: `dunya` or `akhirah`)
+- `PATCH /api/entries/:id` - update entry flags (`starred`, `archived`, `signal`, pivot metadata, `priority`)
 - `POST /api/goals` - create a goal
 - `PATCH /api/goals/:id` - update a goal
 - `POST /api/projects` - create a project
