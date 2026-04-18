@@ -182,25 +182,30 @@ export function ThroughlineHomePage() {
     }
   }, []);
 
-  const toggleStar = useCallback(async (id: string) => {
-    let nextStarred = false;
-    setEntries((state) =>
-      state.map((entry) => {
-        if (entry.id !== id) return entry;
-        nextStarred = !entry.starred;
-        return { ...entry, starred: nextStarred };
-      }),
-    );
-    try {
-      await fetch(`/api/entries/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ starred: nextStarred }),
-      });
-    } catch {
-      // Preserve optimistic update.
-    }
-  }, []);
+  const toggleStar = useCallback(
+    async (id: string) => {
+      const current = entries.find((entry) => entry.id === id);
+      if (!current) return;
+
+      const nextStarred = !Boolean(current.starred);
+      setEntries((state) => state.map((entry) => (entry.id === id ? { ...entry, starred: nextStarred } : entry)));
+
+      try {
+        const response = await fetch(`/api/entries/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ starred: nextStarred }),
+        });
+
+        if (!response.ok) {
+          setEntries((state) => state.map((entry) => (entry.id === id ? { ...entry, starred: !nextStarred } : entry)));
+        }
+      } catch {
+        setEntries((state) => state.map((entry) => (entry.id === id ? { ...entry, starred: !nextStarred } : entry)));
+      }
+    },
+    [entries],
+  );
 
   const onSlotClick = (type: "goal" | "project", id: string) => {
     const source = type === "goal" ? goals.find((goal) => goal.id === id) : projects.find((project) => project.id === id);

@@ -101,9 +101,10 @@
 
 .entry {
   position: relative;
-  padding: 16px 18px 14px 44px;
+  padding: 16px 18px 14px 68px;
   border-radius: 10px;
-  transition: background 0.15s var(--e);
+  border-left: 2px solid transparent;
+  transition: background 0.15s var(--e), border-color 0.15s var(--e), box-shadow 0.15s var(--e);
 }
 
 .entry:hover {
@@ -113,29 +114,43 @@
 .entry .timestamp {
   position: absolute;
   left: 0;
-  top: 20px;
+  top: 18px;
   font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--ink-4);
-  width: 38px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+  width: 54px;
   text-align: right;
 }
 
 .entry .dot {
   position: absolute;
-  left: 40px;
-  top: 23px;
-  width: 4px;
-  height: 4px;
+  left: 60px;
+  top: 24px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: var(--ink-4);
+  background: var(--ink-3);
   transform: translateX(-50%);
+}
+
+.entry.starred {
+  background: color-mix(in oklab, var(--star-soft) 60%, var(--card));
+  border-left-color: var(--star);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--star) 18%, var(--rule));
+}
+
+.entry.starred:hover {
+  background: color-mix(in oklab, var(--star-soft) 70%, var(--card));
 }
 
 .entry.starred .dot {
   background: var(--star);
   box-shadow: 0 0 0 3px var(--star-soft);
+}
+
+.entry.starred .timestamp {
+  color: color-mix(in oklab, var(--star) 40%, var(--ink-2));
 }
 
 .entry.archived {
@@ -145,11 +160,11 @@
 .entry .meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 8px;
-  margin-bottom: 6px;
-  font-size: 11px;
+  gap: 6px 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
   font-family: var(--f-mono);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .entry .meta .tag {
@@ -162,17 +177,17 @@
 }
 
 .entry .meta .goal {
-  color: var(--accent-ink);
-  font-weight: 500;
+  color: color-mix(in oklab, var(--accent) 70%, var(--ink));
+  font-weight: 600;
   cursor: pointer;
 }
 
 .entry .meta .project {
   color: var(--ink-2);
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  border-bottom: 1px dashed var(--rule-strong);
-  padding-bottom: 1px;
+  text-decoration: underline dashed color-mix(in oklab, var(--ink-3) 70%, transparent);
+  text-underline-offset: 3px;
 }
 
 .entry .meta .project:hover {
@@ -320,7 +335,7 @@ html[data-entry="card"] .entry:hover {
 }
 
 html[data-entry="line"] .entry {
-  padding: 10px 18px 10px 44px;
+  padding: 10px 18px 10px 68px;
 }
 
 html[data-entry="line"] .entry .content {
@@ -369,10 +384,10 @@ html[data-layout="sidebar"] .main {
 
 .sidebar h3 {
   font-family: var(--f-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--ink-3);
   margin: 0 0 8px;
   font-weight: 500;
 }
@@ -399,15 +414,15 @@ html[data-layout="sidebar"] .main {
 
 .sidebar .item .kind {
   font-family: var(--f-mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--ink-3);
 }
 
 .sidebar .item .t {
   font-family: var(--f-display);
-  font-size: 15px;
+  font-size: 17px;
   color: var(--ink);
   line-height: 1.3;
   padding-right: 44px;
