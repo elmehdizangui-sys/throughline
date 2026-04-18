@@ -23,6 +23,7 @@ import { applyTweaks, formatDay, Icon } from "@/features/throughline/shared";
 import { ThreadsView } from "@/features/throughline/threads-view";
 import { TimelineView } from "@/features/throughline/timeline-view";
 import { WeeklyReview } from "@/features/throughline/weekly-review";
+import { GoalProjectComposer, type ComposerSubmitPayload } from "@/features/throughline/goal-project-composer";
 
 function currentYear() {
   return new Date().getUTCFullYear();
@@ -54,6 +55,11 @@ export default function HomePage() {
   const [timelineYear] = useState<number>(() => currentYear());
   const [timelineData, setTimelineData] = useState<ThroughlineTimelineYear | null>(null);
   const [timelineLoading, setTimelineLoading] = useState(false);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerKind, setComposerKind] = useState<"goal" | "project">("goal");
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [composerPreselectedGoalId, setComposerPreselectedGoalId] = useState<string | null>(null);
 
   useEffect(() => {
     applyTweaks(tweaks);
@@ -203,6 +209,62 @@ export default function HomePage() {
     }
   };
 
+  const openCreateComposer = useCallback((kind: "goal" | "project", preselectedGoalId?: string | null) => {
+    setComposerKind(kind);
+    setEditingGoalId(null);
+    setEditingProjectId(null);
+    setComposerPreselectedGoalId(preselectedGoalId ?? null);
+    setComposerOpen(true);
+  }, []);
+
+  const openEditComposer = useCallback((kind: "goal" | "project", id: string) => {
+    setComposerKind(kind);
+    if (kind === "goal") {
+      setEditingGoalId(id);
+      setEditingProjectId(null);
+      setComposerPreselectedGoalId(null);
+    } else {
+      setEditingProjectId(id);
+      setEditingGoalId(null);
+      const project = projects.find((item) => item.id === id);
+      setComposerPreselectedGoalId(project?.goal_id ?? null);
+    }
+    setComposerOpen(true);
+  }, [projects]);
+
+  const handleComposerSubmit = useCallback(
+    async (submission: ComposerSubmitPayload) => {
+      const isUpdate = Boolean(submission.id);
+      const base = submission.kind === "goal" ? "/api/goals" : "/api/projects";
+      const path = isUpdate ? `${base}/${submission.id}` : base;
+      const method = isUpdate ? "PATCH" : "POST";
+
+      const response = await fetch(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(submission.payload),
+      });
+      if (!response.ok) return;
+
+      if (submission.kind === "goal") {
+        const record = (await response.json()) as ThroughlineGoal;
+        setGoals((state) => {
+          const existing = state.some((item) => item.id === record.id);
+          const next = existing ? state.map((item) => (item.id === record.id ? record : item)) : [...state, record];
+          return [...next].sort((a, b) => (a.order_index ?? Number.MAX_SAFE_INTEGER) - (b.order_index ?? Number.MAX_SAFE_INTEGER));
+        });
+      } else {
+        const record = (await response.json()) as ThroughlineProject;
+        setProjects((state) => {
+          const existing = state.some((item) => item.id === record.id);
+          const next = existing ? state.map((item) => (item.id === record.id ? record : item)) : [...state, record];
+          return [...next].sort((a, b) => (a.order_index ?? Number.MAX_SAFE_INTEGER) - (b.order_index ?? Number.MAX_SAFE_INTEGER));
+        });
+      }
+    },
+    [],
+  );
+
   const filtered = useMemo(() => {
     let list = entries;
     if (contextFilter) {
@@ -270,13 +332,23 @@ export default function HomePage() {
 
   return (
     <>
-      <Sidebar goals={goals} projects={projects} activeFilter={contextFilter} onSlotClick={onSlotClick} onStartReview={() => setReviewOpen(true)} />
+      <Sidebar
+        goals={goals}
+        projects={projects}
+        activeFilter={contextFilter}
+        onSlotClick={onSlotClick}
+        onCreate={(kind) => openCreateComposer(kind)}
+        onEdit={(kind, id) => openEditComposer(kind, id)}
+        onStartReview={() => setReviewOpen(true)}
+      />
       <Masthead onOpenTweaks={() => setTweaksOpen(true)} onView={setView} view={view} />
       <BigLineBar
         goals={goals}
         projects={projects}
         activeFilter={contextFilter}
         onSlotClick={onSlotClick}
+        onCreateSlot={(kind) => openCreateComposer(kind)}
+        onEditSlot={(kind, id) => openEditComposer(kind, id)}
         onStartReview={() => setReviewOpen(true)}
       />
       <Minimap data={minimap} />
@@ -302,6 +374,16 @@ export default function HomePage() {
       {view === "map" ? <TimelineView data={timelineData} isLoading={timelineLoading} /> : null}
 
       {reviewOpen ? <WeeklyReview entries={entries} onClose={() => setReviewOpen(false)} onApply={applyReview} /> : null}
+      <GoalProjectComposer
+        open={composerOpen}
+        initialKind={composerKind}
+        editingGoal={editingGoalId ? goals.find((goal) => goal.id === editingGoalId) ?? null : null}
+        editingProject={editingProjectId ? projects.find((project) => project.id === editingProjectId) ?? null : null}
+        preselectedGoalId={composerPreselectedGoalId}
+        goals={goals}
+        onClose={() => setComposerOpen(false)}
+        onSubmit={handleComposerSubmit}
+      />
       <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} tweaks={tweaks} setTweak={setTweak} />
 
       {!tweaksOpen ? (

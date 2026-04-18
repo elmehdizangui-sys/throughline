@@ -8,6 +8,9 @@ import type {
   ThroughlineTweaks,
 } from "@/lib/types";
 
+const GOAL_SLOTS = 3;
+const PROJECT_SLOTS = 2;
+
 export function Masthead({
   onOpenTweaks,
   onView,
@@ -82,15 +85,22 @@ export function BigLineBar({
   goals,
   projects,
   onSlotClick,
+  onEditSlot,
+  onCreateSlot,
   onStartReview,
   activeFilter,
 }: {
   goals: ThroughlineGoal[];
   projects: ThroughlineProject[];
   onSlotClick: (type: "goal" | "project", id: string) => void;
+  onEditSlot: (type: "goal" | "project", id: string) => void;
+  onCreateSlot: (type: "goal" | "project") => void;
   onStartReview: () => void;
   activeFilter: ThroughlineContextFilter | null;
 }) {
+  const goalPlaceholders = Math.max(0, GOAL_SLOTS - goals.length);
+  const projectPlaceholders = Math.max(0, PROJECT_SLOTS - projects.length);
+
   return (
     <div className="bigline-bar">
       <div className="bigline-inner">
@@ -116,7 +126,23 @@ export function BigLineBar({
                   <span className="dot" /> Life Goal 0{index + 1}
                 </div>
                 <div className="slot-text">{goal.name}</div>
+                <button
+                  className="slot-edit"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEditSlot("goal", goal.id);
+                  }}
+                  type="button"
+                >
+                  Edit
+                </button>
               </div>
+            ))}
+            {Array.from({ length: goalPlaceholders }).map((_, index) => (
+              <button key={`goal-empty-${index}`} className="slot empty" onClick={() => onCreateSlot("goal")} type="button">
+                <div className="slot-kind">Open slot</div>
+                <div className="slot-text">+ New life goal</div>
+              </button>
             ))}
             <div className="slot-divider" />
             {projects.map((project, index) => (
@@ -134,7 +160,23 @@ export function BigLineBar({
                   <span className="dot" /> Project 0{index + 1}
                 </div>
                 <div className="slot-text">{project.name}</div>
+                <button
+                  className="slot-edit"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEditSlot("project", project.id);
+                  }}
+                  type="button"
+                >
+                  Edit
+                </button>
               </div>
+            ))}
+            {Array.from({ length: projectPlaceholders }).map((_, index) => (
+              <button key={`project-empty-${index}`} className="slot empty" onClick={() => onCreateSlot("project")} type="button">
+                <div className="slot-kind">Open slot</div>
+                <div className="slot-text">+ New project</div>
+              </button>
             ))}
           </div>
         </div>
@@ -151,12 +193,16 @@ export function Sidebar({
   goals,
   projects,
   onSlotClick,
+  onCreate,
+  onEdit,
   activeFilter,
   onStartReview,
 }: {
   goals: ThroughlineGoal[];
   projects: ThroughlineProject[];
   onSlotClick: (type: "goal" | "project", id: string) => void;
+  onCreate: (type: "goal" | "project") => void;
+  onEdit: (type: "goal" | "project", id: string) => void;
   activeFilter: ThroughlineContextFilter | null;
   onStartReview: () => void;
 }) {
@@ -183,8 +229,21 @@ export function Sidebar({
           >
             <span className="kind">Goal 0{index + 1}</span>
             <span className="t">{goal.name}</span>
+            <button
+              className="item-edit"
+              onClick={(event) => {
+                event.stopPropagation();
+                onEdit("goal", goal.id);
+              }}
+              type="button"
+            >
+              Edit
+            </button>
           </div>
         ))}
+        <button className="inline-create" onClick={() => onCreate("goal")} type="button">
+          + New life goal
+        </button>
       </div>
       <div>
         <h3>Projects</h3>
@@ -201,8 +260,21 @@ export function Sidebar({
           >
             <span className="kind">Project 0{index + 1}</span>
             <span className="t">{project.name}</span>
+            <button
+              className="item-edit"
+              onClick={(event) => {
+                event.stopPropagation();
+                onEdit("project", project.id);
+              }}
+              type="button"
+            >
+              Edit
+            </button>
           </div>
         ))}
+        <button className="inline-create" onClick={() => onCreate("project")} type="button">
+          + New project
+        </button>
       </div>
       <div style={{ marginTop: "auto" }}>
         <button className="review-btn" style={{ width: "100%" }} onClick={onStartReview} type="button">
