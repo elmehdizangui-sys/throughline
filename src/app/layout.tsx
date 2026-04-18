@@ -3,7 +3,12 @@ import { Fraunces, Inter, JetBrains_Mono, Instrument_Serif, Source_Serif_4 } fro
 import "@/app/globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces" });
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  axes: ["opsz"],
+  variable: "--font-fraunces",
+});
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],

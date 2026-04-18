@@ -52,7 +52,7 @@ export default function HomePage() {
   const [threadsData, setThreadsData] = useState<ThroughlineThreadsView | null>(null);
   const [threadsLoading, setThreadsLoading] = useState(false);
 
-  const [timelineYear] = useState<number>(() => currentYear());
+  const [timelineYear, setTimelineYear] = useState<number>(() => currentYear());
   const [timelineData, setTimelineData] = useState<ThroughlineTimelineYear | null>(null);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
@@ -370,8 +370,10 @@ export default function HomePage() {
           onToggleStar={toggleStar}
         />
       ) : null}
-      {view === "threads" ? <ThreadsView data={threadsData} isLoading={threadsLoading} /> : null}
-      {view === "map" ? <TimelineView data={timelineData} isLoading={timelineLoading} /> : null}
+      {view === "threads" ? <ThreadsView data={threadsData} isLoading={threadsLoading} entries={entries} /> : null}
+      {view === "map" ? (
+        <TimelineView data={timelineData} isLoading={timelineLoading} entries={entries} onYearChange={setTimelineYear} />
+      ) : null}
 
       {reviewOpen ? <WeeklyReview entries={entries} onClose={() => setReviewOpen(false)} onApply={applyReview} /> : null}
       <GoalProjectComposer

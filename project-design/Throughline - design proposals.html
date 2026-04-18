@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Throughline — design proposals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f6f3ee;
+  --paper-2: #efebe4;
+  --paper-3: #e7e1d7;
+  --card: #fdfcf9;
+  --ink: #1a1816;
+  --ink-2: #3c3731;
+  --ink-3: #6b6459;
+  --ink-4: #a39988;
+  --rule: #e2dccf;
+  --rule-strong: #c9c1b2;
+  --accent: oklch(0.45 0.14 270);
+  --accent-soft: oklch(0.93 0.04 270);
+  --accent-ink: oklch(0.32 0.12 270);
+  --star: oklch(0.68 0.14 75);
+  --star-soft: oklch(0.94 0.05 85);
+  --pivot: oklch(0.55 0.14 30);
+  --pivot-soft: oklch(0.94 0.04 30);
+  --f-display: "Fraunces", Georgia, serif;
+  --f-italic: "Instrument Serif", Georgia, serif;
+  --f-body: "Inter", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, monospace;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --e: cubic-bezier(.2,.7,.2,1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+/* ─── Document chrome ─── */
+.doc { max-width: 1080px; margin: 0 auto; padding: 80px 40px 200px; }
+
+.doc-head { margin-bottom: 80px; }
+.eyebrow { font-family: var(--f-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
+.eyebrow .rule { flex: 1; max-width: 120px; height: 1px; background: var(--rule-strong); }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: 56px; letter-spacing: -0.025em; line-height: 1.05; margin: 0 0 12px; color: var(--ink); }
+h1 em { font-family: var(--f-italic); font-style: italic; color: var(--accent); font-weight: 400; }
+.deck { font-family: var(--f-display); font-weight: 400; font-size: 20px; line-height: 1.5; color: var(--ink-3); max-width: 620px; font-style: italic; }
+
+/* Section */
+section.proposal { margin-top: 100px; padding-top: 80px; border-top: 1px solid var(--rule); }
+.sec-label { font-family: var(--f-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+.sec-label .num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 10px; font-family: var(--f-mono); letter-spacing: 0; font-weight: 500; }
+h2 { font-family: var(--f-display); font-weight: 400; font-size: 40px; letter-spacing: -0.02em; line-height: 1.1; margin: 0 0 12px; color: var(--ink); }
+h2 em { font-family: var(--f-italic); font-style: italic; color: var(--accent); font-weight: 400; }
+.blurb { font-size: 15px; color: var(--ink-2); max-width: 640px; line-height: 1.65; margin: 0 0 36px; }
+.blurb a { color: var(--accent); }
+
+/* Design rationale column */
+.rationale { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink-3); text-transform: uppercase; margin-top: 20px; }
+.rationale ul { padding: 0; margin: 8px 0 0; list-style: none; }
+.rationale li { padding: 6px 0; border-bottom: 1px dashed var(--rule); font-family: var(--f-body); font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--ink-2); line-height: 1.5; }
+.rationale li::before { content: "→ "; color: var(--ink-4); font-family: var(--f-mono); }
+
+/* Mock frame */
+.mock {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 0 var(--rule), 0 30px 60px -30px rgba(20,16,10,0.10);
+  overflow: hidden;
+  margin-top: 24px;
+}
+.mock-head {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--rule);
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-4);
+  background: var(--paper-2);
+}
+.mock-head .dots { display: flex; gap: 5px; }
+.mock-head .dots span { width: 9px; height: 9px; border-radius: 50%; background: var(--rule-strong); }
+
+/* ─────────────────────────────────────────────────────────────
+   PROPOSAL 1: Add Goal / Project composer
+   ───────────────────────────────────────────────────────────── */
+.composer {
+  padding: 48px 60px 40px;
+  background: var(--card);
+  position: relative;
+}
+.composer-type {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+}
+.composer-type button {
+  padding: 7px 14px; border-radius: 999px; border: none; background: transparent; color: var(--ink-3); cursor: pointer;
+}
+.composer-type button.on { background: var(--ink); color: var(--paper); }
+.composer .q {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px;
+}
+.composer .big-input {
+  width: 100%; border: none; outline: none; background: transparent;
+  font-family: var(--f-display); font-weight: 400; font-size: 40px; letter-spacing: -0.02em; line-height: 1.15;
+  color: var(--ink); padding: 0; margin-bottom: 6px;
+}
+.composer .big-input::placeholder { color: var(--ink-4); font-style: italic; }
+.composer .underline { height: 1px; background: var(--rule-strong); margin-bottom: 32px; }
+.composer .why {
+  font-family: var(--f-italic); font-style: italic; font-size: 17px; color: var(--ink-3); line-height: 1.5; max-width: 460px; margin-bottom: 36px;
+}
+.composer .field-row { display: grid; grid-template-columns: 140px 1fr; gap: 24px; padding: 16px 0; border-top: 1px solid var(--rule); align-items: start; }
+.composer .field-row:last-of-type { border-bottom: 1px solid var(--rule); margin-bottom: 28px; }
+.composer .field-label { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); padding-top: 6px; }
+.composer .field-body { font-size: 14px; color: var(--ink); }
+.composer .goal-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.composer .goal-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px 7px 10px; border: 1px solid var(--rule); border-radius: 999px;
+  background: var(--paper-2); color: var(--ink-2); font-size: 13px; cursor: pointer; transition: all .15s var(--e);
+}
+.composer .goal-chip:hover { border-color: var(--rule-strong); }
+.composer .goal-chip .d { width: 8px; height: 8px; border-radius: 50%; }
+.composer .goal-chip.sel { background: var(--accent-soft); color: var(--accent-ink); border-color: color-mix(in oklab, var(--accent) 35%, transparent); }
+.composer .goal-chip.none { font-style: italic; color: var(--ink-4); background: transparent; }
+
+.composer .hue-pick { display: flex; gap: 8px; align-items: center; }
+.composer .hue {
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: transform .1s;
+}
+.composer .hue.on { border-color: var(--ink); }
+.composer .hue:hover { transform: scale(1.08); }
+
+.composer .target {
+  display: inline-flex; gap: 14px; padding: 8px 16px; background: var(--paper-2); border-radius: 999px; border: 1px solid var(--rule);
+  font-size: 13px; color: var(--ink-2); font-family: var(--f-mono); align-items: center;
+}
+.composer .target .cal { width: 14px; height: 14px; border: 1.5px solid var(--ink-3); border-radius: 3px; position: relative; }
+.composer .target .cal::before, .composer .target .cal::after { content: ""; position: absolute; top: -3px; width: 2px; height: 4px; background: var(--ink-3); border-radius: 1px; }
+.composer .target .cal::before { left: 2px; } .composer .target .cal::after { right: 2px; }
+
+.composer-foot {
+  display: flex; align-items: center; justify-content: space-between; padding-top: 4px;
+}
+.composer-foot .hint { font-family: var(--f-mono); font-size: 11px; color: var(--ink-4); }
+.composer-foot .hint .kbd { font-family: var(--f-mono); font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--paper-2); border: 1px solid var(--rule); color: var(--ink-3); margin: 0 2px; }
+.composer-foot .actions { display: flex; gap: 8px; }
+.composer-foot .cancel { padding: 9px 16px; background: transparent; border: 1px solid var(--rule); border-radius: 999px; color: var(--ink-3); font-size: 13px; }
+.composer-foot .save { padding: 9px 20px; background: var(--ink); color: var(--paper); border: 1px solid var(--ink); border-radius: 999px; font-size: 13px; font-weight: 500; }
+
+/* Secondary: quick-add inline from sidebar */
+.inline-add {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; margin-top: 16px;
+  border: 1px dashed var(--rule-strong); border-radius: var(--radius);
+  background: transparent; color: var(--ink-3); font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  cursor: pointer; transition: all .15s var(--e);
+}
+.inline-add:hover { border-color: var(--ink-3); color: var(--ink); background: var(--paper-2); }
+.inline-add .plus { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid currentColor; border-radius: 50%; font-size: 12px; line-height: 1; }
+
+/* Sidebar preview */
+.side-preview {
+  margin-top: 40px;
+  display: grid; grid-template-columns: 240px 1fr; gap: 40px; align-items: start;
+}
+.sidebar-mini {
+  padding: 24px 20px;
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+.sidebar-mini h3 { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-4); margin: 0 0 10px; font-weight: 500; }
+.sidebar-mini .item { padding: 8px 10px; border-radius: 6px; margin-bottom: 2px; }
+.sidebar-mini .item .kind { font-family: var(--f-mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-4); }
+.sidebar-mini .item .t { font-family: var(--f-display); font-size: 14px; color: var(--ink); display: block; margin-top: 1px; }
+.sidebar-mini .item + h3 { margin-top: 16px; }
+
+/* ─────────────────────────────────────────────────────────────
+   PROPOSAL 2: Threads view — "The Spine"
+   ───────────────────────────────────────────────────────────── */
+.threads-head {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;
+  padding: 28px 32px 20px;
+  border-bottom: 1px solid var(--rule);
+}
+.threads-title { font-family: var(--f-display); font-weight: 400; font-size: 30px; letter-spacing: -0.02em; line-height: 1.1; color: var(--ink); margin: 0; }
+.threads-title em { font-family: var(--f-italic); font-style: italic; color: var(--accent); }
+.threads-sub { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-4); margin-top: 6px; }
+.threads-legend { display: flex; gap: 18px; font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-4); }
+.threads-legend .item { display: flex; align-items: center; gap: 6px; }
+.threads-legend .d { width: 8px; height: 8px; border-radius: 50%; }
+.threads-legend .d.reg { background: var(--ink-4); }
+.threads-legend .d.sig { background: var(--star); box-shadow: 0 0 0 2px var(--star-soft); }
+.threads-legend .piv { width: 10px; height: 2px; background: var(--pivot); }
+
+.threads-spines { padding: 20px 32px 40px; }
+
+.spine {
+  position: relative;
+  padding: 22px 0 22px 180px;
+  border-top: 1px dashed var(--rule);
+}
+.spine:first-child { border-top: none; padding-top: 16px; }
+.spine.project { padding-left: 200px; }
+.spine .meta {
+  position: absolute; left: 0; top: 24px; width: 160px;
+}
+.spine.project .meta { left: 20px; }
+.spine .meta .kind {
+  font-family: var(--f-mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-4);
+  display: flex; align-items: center; gap: 6px;
+}
+.spine .meta .kind .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.spine.project .meta .kind .dot { background: var(--ink-2); }
+.spine .meta .name {
+  font-family: var(--f-display); font-weight: 500; font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; color: var(--ink); margin: 4px 0 6px;
+}
+.spine .meta .stats {
+  font-family: var(--f-mono); font-size: 10px; color: var(--ink-3); letter-spacing: 0.04em;
+}
+.spine .meta .stats strong { color: var(--star); font-weight: 600; }
+
+.spine-line {
+  position: relative; height: 60px;
+  display: flex; align-items: center;
+}
+.spine-line::before {
+  content: ""; position: absolute; left: 0; right: 20px; top: 50%;
+  height: 1px; background: var(--rule-strong);
+}
+.spine-line .bead {
+  position: absolute; top: 50%; transform: translate(-50%, -50%);
+  width: 7px; height: 7px; border-radius: 50%; background: var(--ink-4);
+  transition: all .2s var(--e);
+  cursor: pointer;
+}
+.spine-line .bead.sig {
+  width: 11px; height: 11px; background: var(--star);
+  box-shadow: 0 0 0 3px var(--star-soft);
+}
+.spine-line .bead.pivot {
+  width: 2px; height: 20px; background: var(--pivot); border-radius: 1px;
+  box-shadow: 0 0 0 4px var(--pivot-soft);
+}
+.spine-line .bead:hover { transform: translate(-50%, -50%) scale(1.3); }
+.spine-line .today-mark {
+  position: absolute; right: 20px; top: -6px; bottom: -6px;
+  width: 2px; background: var(--ink);
+}
+.spine-line .today-mark::after {
+  content: "NOW"; position: absolute; bottom: -16px; right: -8px;
+  font-family: var(--f-mono); font-size: 8px; letter-spacing: 0.2em; color: var(--ink);
+}
+
+.spine .preview {
+  margin-top: 4px; padding: 10px 14px;
+  background: var(--paper-2); border-radius: 8px;
+  font-family: var(--f-display); font-style: italic; font-size: 14px; color: var(--ink-2);
+  line-height: 1.5; max-width: 640px;
+  border-left: 2px solid var(--star);
+}
+.spine .preview .when { font-family: var(--f-mono); font-style: normal; font-size: 10px; color: var(--ink-4); letter-spacing: 0.1em; margin-right: 10px; text-transform: uppercase; }
+
+/* Thread detail (expanded) */
+.thread-detail {
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
+  padding: 36px 40px 48px;
+}
+.thread-detail .back { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 16px; }
+.thread-detail .back:hover { color: var(--ink); }
+.thread-detail h3 { font-family: var(--f-display); font-weight: 400; font-size: 44px; letter-spacing: -0.02em; line-height: 1.05; margin: 0 0 8px; color: var(--ink); }
+.thread-detail .crumbs { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-4); display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+.thread-detail .crumbs .sep { opacity: 0.5; }
+.thread-detail .crumbs .g { color: var(--accent); }
+.thread-detail .stats-row { display: flex; gap: 28px; padding: 18px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin-bottom: 32px; }
+.thread-detail .stat strong { font-family: var(--f-display); font-size: 22px; font-weight: 500; color: var(--ink); display: block; }
+.thread-detail .stat span { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-4); }
+
+/* ─────────────────────────────────────────────────────────────
+   PROPOSAL 3: Timeline view — "The Year Line"
+   ───────────────────────────────────────────────────────────── */
+.tl {
+  padding: 32px 40px 44px;
+}
+.tl-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; }
+.tl-head h3 { font-family: var(--f-display); font-weight: 400; font-size: 30px; letter-spacing: -0.02em; margin: 0; color: var(--ink); }
+.tl-head h3 em { font-family: var(--f-italic); font-style: italic; color: var(--accent); }
+.tl-head .range { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); display: flex; gap: 12px; align-items: center; }
+.tl-head .range .nav { display: inline-grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--rule); border-radius: 6px; cursor: pointer; }
+
+.tl-years { display: flex; gap: 4px; margin-bottom: 8px; justify-content: flex-start; }
+.tl-years .yr { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.14em; color: var(--ink-4); padding: 3px 10px; border-radius: 4px; cursor: pointer; }
+.tl-years .yr.on { color: var(--ink); background: var(--paper-2); font-weight: 600; }
+
+/* Ribbons: goal/project active-period bands above the line */
+.tl-ribbons { margin: 16px 0 10px; position: relative; }
+.tl-ribbon {
+  height: 26px; margin-bottom: 4px;
+  position: relative;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.tl-ribbon .label {
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 170px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.14em; color: var(--ink-3);
+  display: flex; align-items: center; gap: 6px;
+}
+.tl-ribbon .label .d { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.tl-ribbon.goal .label .d { background: var(--accent); }
+.tl-ribbon.project .label .d { background: var(--ink-2); }
+.tl-ribbon.project .label { padding-left: 16px; color: var(--ink-3); }
+.tl-ribbon .band {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  height: 10px; border-radius: 2px;
+  left: 200px; right: 0;
+}
+.tl-ribbon.goal .band { background: color-mix(in oklab, var(--accent) 18%, transparent); border-left: 2px solid var(--accent); }
+.tl-ribbon.project .band { background: color-mix(in oklab, var(--ink-2) 12%, transparent); border-left: 2px solid var(--ink-2); height: 6px; }
+
+/* The actual year line */
+.year-line {
+  position: relative;
+  margin: 28px 0 0;
+  padding: 0 0 40px;
+}
+.year-line::before {
+  content: ""; position: absolute; left: 200px; right: 0; top: 80px;
+  height: 1px; background: var(--ink-2);
+}
+
+.year-axis {
+  position: absolute; left: 200px; right: 0; top: 80px; height: 0;
+}
+.year-axis .month {
+  position: absolute; top: 8px;
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-4);
+}
+.year-axis .month::before { content: ""; position: absolute; left: 0; top: -8px; width: 1px; height: 6px; background: var(--ink-3); }
+
+.year-bars {
+  position: absolute; left: 200px; right: 0; top: 80px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  transform: translateY(-100%);
+  height: 72px;
+  gap: 1px;
+}
+.year-bars .wk {
+  flex: 1;
+  display: flex; flex-direction: column-reverse; gap: 1px;
+  min-width: 0;
+  cursor: pointer;
+  transition: transform .15s var(--e);
+}
+.year-bars .wk:hover { transform: translateY(-2px); }
+.year-bars .wk .blk { height: 4px; background: var(--ink-3); border-radius: 1px; opacity: 0.5; }
+.year-bars .wk .blk.sig { background: var(--star); opacity: 1; }
+.year-bars .wk.on { transform: translateY(-2px); }
+.year-bars .wk.on .blk { opacity: 1; }
+
+.year-pivots {
+  position: absolute; left: 200px; right: 0; top: 64px; height: 32px;
+}
+.year-pivot {
+  position: absolute; top: 0; width: 1px; height: 32px; background: var(--pivot);
+}
+.year-pivot::before {
+  content: ""; position: absolute; top: -3px; left: -3px; width: 7px; height: 7px;
+  background: var(--pivot); border-radius: 50%; border: 2px solid var(--paper);
+  box-sizing: content-box;
+}
+.year-pivot .lbl {
+  position: absolute; top: -20px; left: -40px; width: 90px; text-align: center;
+  font-family: var(--f-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--pivot);
+  white-space: nowrap; overflow: visible;
+}
+
+.year-left-label {
+  position: absolute; left: 0; top: 76px; font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.14em; color: var(--ink-3);
+}
+
+/* Selected week detail */
+.tl-week-detail {
+  margin-top: 80px; padding: 28px 28px 24px;
+  background: var(--paper-2); border-radius: var(--radius-lg);
+  border: 1px solid var(--rule);
+}
+.tl-week-detail .wk-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.tl-week-detail .wk-title { font-family: var(--f-display); font-size: 22px; font-weight: 400; letter-spacing: -0.01em; color: var(--ink); }
+.tl-week-detail .wk-title em { font-family: var(--f-italic); font-style: italic; color: var(--accent); }
+.tl-week-detail .wk-stats { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); display: flex; gap: 18px; }
+.tl-week-detail .wk-stats strong { color: var(--star); }
+
+.wk-signals { display: flex; flex-direction: column; gap: 12px; }
+.wk-signal { display: grid; grid-template-columns: 80px 1fr auto; gap: 16px; padding: 10px 0; border-top: 1px dashed var(--rule); align-items: baseline; }
+.wk-signal:first-child { border-top: none; }
+.wk-signal .when { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-4); }
+.wk-signal .txt { font-family: var(--f-display); font-size: 16px; line-height: 1.5; color: var(--ink); font-weight: 400; }
+.wk-signal .ctx { font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.04em; color: var(--accent-ink); white-space: nowrap; }
+
+/* Footer */
+.footer {
+  margin-top: 120px; padding-top: 40px; border-top: 1px solid var(--rule);
+  font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-4);
+}
+.footer .next { font-family: var(--f-display); font-style: italic; font-size: 18px; text-transform: none; letter-spacing: 0; color: var(--ink-2); margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+  <header class="doc-head">
+    <div class="eyebrow"><span class="rule"></span><span>Design proposals — Apr 18 2026</span></div>
+    <h1>Three screens to <em>finish</em> the throughline.</h1>
+    <p class="deck">Composer for new goals and projects, a Threads view that treats each life-line as literal ink, and a Timeline that lays the year flat so you can see where you pivoted.</p>
+  </header>
+
+  <!-- ─────────────────────────────────────────────────────────
+       PROPOSAL 1
+       ───────────────────────────────────────────────────────── -->
+  <section class="proposal">
+    <div class="sec-label"><span class="num">1</span><span>Add a goal or project</span></div>
+    <h2>A composer, not a <em>form</em>.</h2>
+    <p class="blurb">Declaring a new goal is a meaningful act — the UI should feel that way. One modal, one giant editorial prompt, a tab to switch between <strong>life goal</strong> and <strong>project</strong>. Projects always ask the single most important question: <em>which goal does this feed?</em> A "Standalone" pill is available for the things that don't fit — but it's off to the side so attachment stays the default.</p>
+
+    <div class="mock">
+      <div class="mock-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span>Compose → New project</span>
+        <span>ESC to close</span>
+      </div>
+      <div class="composer">
+        <div class="composer-type">
+          <button>Life goal</button>
+          <button class="on">Project</button>
+        </div>
+
+        <div class="q">The project is called</div>
+        <input class="big-input" placeholder="Name it the way you'd say it aloud…" value="Launch the self-publishing workflow">
+        <div class="underline"></div>
+
+        <div class="why">What does a good week on this project <em>feel like</em>? A line or two. Optional.</div>
+
+        <div class="field-row">
+          <div class="field-label">Feeds into</div>
+          <div class="field-body">
+            <div class="goal-pick">
+              <span class="goal-chip sel"><span class="d" style="background: var(--accent);"></span>Build a business that compounds</span>
+              <span class="goal-chip"><span class="d" style="background: var(--accent);"></span>Write every day, ship every month</span>
+              <span class="goal-chip"><span class="d" style="background: var(--accent);"></span>Be present with Maya &amp; Leo</span>
+              <span class="goal-chip none">or keep it standalone</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Target</div>
+          <div class="field-body">
+            <span class="target"><span class="cal"></span>Q3 2026 · Sep 30</span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field-label">Color</div>
+          <div class="field-body">
+            <div class="hue-pick">
+              <span class="hue on" style="background: oklch(0.45 0.14 270);"></span>
+              <span class="hue" style="background: oklch(0.55 0.12 40);"></span>
+              <span class="hue" style="background: oklch(0.48 0.10 150);"></span>
+              <span class="hue" style="background: oklch(0.55 0.14 10);"></span>
+              <span class="hue" style="background: oklch(0.25 0.02 260);"></span>
+              <span style="font-family: var(--f-mono); font-size: 11px; color: var(--ink-4); margin-left: 8px;">inherits from goal →</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="composer-foot">
+          <div class="hint"><span class="kbd">⌘</span><span class="kbd">↵</span> to save · <span class="kbd">⇥</span> to switch type</div>
+          <div class="actions">
+            <button class="cancel">Cancel</button>
+            <button class="save">Add project</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rationale">
+      <div>Design notes</div>
+      <ul>
+        <li>Tab toggle, not a radio — the two types share enough structure to feel like flavors of the same gesture.</li>
+        <li>The name input uses <em>display</em> type at 40px. You're writing a title, not filling a form.</li>
+        <li>"Feeds into" is a single horizontal pill row. If you have &gt; 5 goals the row wraps; if you have 2 it stays tight. Scale without effort.</li>
+        <li>Project color inherits the parent goal's color by default — visual hierarchy follows attachment.</li>
+        <li>Secondary entry point: a dashed "+ new thread" tile at the bottom of each Sidebar section, so adding something new is always one click from where you'd look for it.</li>
+      </ul>
+    </div>
+
+    <div class="side-preview">
+      <div class="sidebar-mini">
+        <h3>Life goals</h3>
+        <div class="item"><span class="kind">Goal 01</span><span class="t">Build a business that compounds</span></div>
+        <div class="item"><span class="kind">Goal 02</span><span class="t">Write every day, ship every month</span></div>
+        <div class="item"><span class="kind">Goal 03</span><span class="t">Be present with Maya &amp; Leo</span></div>
+        <div class="inline-add"><span class="plus">+</span>New life goal</div>
+        <h3>Projects</h3>
+        <div class="item"><span class="kind">Project 01</span><span class="t">Throughline launch</span></div>
+        <div class="item"><span class="kind">Project 02</span><span class="t">Q2 client work — Ember Co.</span></div>
+        <div class="inline-add"><span class="plus">+</span>New project</div>
+      </div>
+      <div style="padding-top: 20px;">
+        <div style="font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px;">Entry points</div>
+        <p style="font-size: 14px; color: var(--ink-2); line-height: 1.6; max-width: 420px;">From the sidebar, a dashed "+ New life goal" and "+ New project" tile sit at the bottom of each section. Click opens the composer above. From the Big Lines bar (when layout=top), an empty slot shows the same dashed style — clicking an empty slot opens the composer pre-selected to that slot.</p>
+        <p style="font-size: 14px; color: var(--ink-2); line-height: 1.6; max-width: 420px;">Editing is the same composer, pre-filled. No separate edit screen.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────
+       PROPOSAL 2 — Threads
+       ───────────────────────────────────────────────────────── -->
+  <section class="proposal">
+    <div class="sec-label"><span class="num">2</span><span>Threads view</span></div>
+    <h2>Your life as <em>ink on a line</em>.</h2>
+    <p class="blurb">Each goal is a horizontal spine running across the screen. Captures are beads on the line, placed by date. Projects are sub-spines indented under their parent goal. Starred captures bloom into slightly larger beads in gold; pivots are vertical tick marks that break the line. At a glance you see rhythm and gaps — the months where one thread went quiet while another lit up.</p>
+
+    <div class="mock">
+      <div class="mock-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span>Throughline → Threads</span>
+        <span>5 lines · 142 beads</span>
+      </div>
+
+      <div class="threads-head">
+        <div>
+          <h3 class="threads-title">Five <em>lines</em> running through your year.</h3>
+          <div class="threads-sub">Last 6 months · Oct 2025 → Apr 2026</div>
+        </div>
+        <div class="threads-legend">
+          <div class="item"><span class="d reg"></span>Capture</div>
+          <div class="item"><span class="d sig"></span>Signal</div>
+          <div class="item"><span class="piv"></span>Pivot</div>
+        </div>
+      </div>
+
+      <div class="threads-spines">
+
+        <!-- Goal spine 1 -->
+        <div class="spine">
+          <div class="meta">
+            <div class="kind"><span class="dot"></span>Life goal 01</div>
+            <div class="name">Build a business that compounds</div>
+            <div class="stats">58 captures · <strong>9 signals</strong></div>
+          </div>
+          <div class="spine-line">
+            <span class="bead" style="left: 3%;"></span>
+            <span class="bead" style="left: 6%;"></span>
+            <span class="bead sig" style="left: 11%;"></span>
+            <span class="bead" style="left: 14%;"></span>
+            <span class="bead" style="left: 17%;"></span>
+            <span class="bead pivot" style="left: 22%;"></span>
+            <span class="bead" style="left: 26%;"></span>
+            <span class="bead sig" style="left: 30%;"></span>
+            <span class="bead" style="left: 33%;"></span>
+            <span class="bead" style="left: 38%;"></span>
+            <span class="bead" style="left: 42%;"></span>
+            <span class="bead sig" style="left: 47%;"></span>
+            <span class="bead" style="left: 51%;"></span>
+            <span class="bead" style="left: 54%;"></span>
+            <span class="bead" style="left: 58%;"></span>
+            <span class="bead sig" style="left: 62%;"></span>
+            <span class="bead" style="left: 66%;"></span>
+            <span class="bead" style="left: 70%;"></span>
+            <span class="bead pivot" style="left: 74%;"></span>
+            <span class="bead" style="left: 78%;"></span>
+            <span class="bead sig" style="left: 82%;"></span>
+            <span class="bead" style="left: 86%;"></span>
+            <span class="bead" style="left: 89%;"></span>
+            <span class="bead sig" style="left: 93%;"></span>
+            <span class="today-mark"></span>
+          </div>
+          <div class="preview"><span class="when">Tue · Apr 15</span>The 'organizing tax' on notes is why I stop journaling. Capture must be free.</div>
+        </div>
+
+        <!-- Nested project under goal 1 -->
+        <div class="spine project">
+          <div class="meta">
+            <div class="kind"><span class="dot"></span>Project 01</div>
+            <div class="name">Throughline launch</div>
+            <div class="stats">28 captures · <strong>5 signals</strong></div>
+          </div>
+          <div class="spine-line">
+            <span class="bead" style="left: 40%;"></span>
+            <span class="bead" style="left: 44%;"></span>
+            <span class="bead sig" style="left: 49%;"></span>
+            <span class="bead" style="left: 52%;"></span>
+            <span class="bead" style="left: 56%;"></span>
+            <span class="bead" style="left: 60%;"></span>
+            <span class="bead sig" style="left: 64%;"></span>
+            <span class="bead" style="left: 68%;"></span>
+            <span class="bead" style="left: 72%;"></span>
+            <span class="bead pivot" style="left: 76%;"></span>
+            <span class="bead" style="left: 80%;"></span>
+            <span class="bead sig" style="left: 84%;"></span>
+            <span class="bead" style="left: 88%;"></span>
+            <span class="bead" style="left: 92%;"></span>
+            <span class="bead sig" style="left: 95%;"></span>
+            <span class="today-mark"></span>
+          </div>
+        </div>
+
+        <!-- Goal 2 -->
+        <div class="spine">
+          <div class="meta">
+            <div class="kind"><span class="dot"></span>Life goal 02</div>
+            <div class="name">Write every day, ship every month</div>
+            <div class="stats">36 captures · <strong>6 signals</strong></div>
+          </div>
+          <div class="spine-line">
+            <span class="bead" style="left: 2%;"></span>
+            <span class="bead" style="left: 5%;"></span>
+            <span class="bead" style="left: 9%;"></span>
+            <span class="bead sig" style="left: 13%;"></span>
+            <span class="bead" style="left: 17%;"></span>
+            <span class="bead" style="left: 21%;"></span>
+            <span class="bead" style="left: 25%;"></span>
+            <span class="bead sig" style="left: 29%;"></span>
+            <span class="bead" style="left: 34%;"></span>
+            <span class="bead" style="left: 41%;"></span>
+            <span class="bead" style="left: 52%;"></span>
+            <span class="bead sig" style="left: 58%;"></span>
+            <span class="bead" style="left: 64%;"></span>
+            <span class="bead" style="left: 71%;"></span>
+            <span class="bead sig" style="left: 77%;"></span>
+            <span class="bead" style="left: 83%;"></span>
+            <span class="bead" style="left: 89%;"></span>
+            <span class="today-mark"></span>
+          </div>
+        </div>
+
+        <!-- Goal 3 -->
+        <div class="spine">
+          <div class="meta">
+            <div class="kind"><span class="dot"></span>Life goal 03</div>
+            <div class="name">Be present with Maya &amp; Leo</div>
+            <div class="stats">18 captures · <strong>3 signals</strong></div>
+          </div>
+          <div class="spine-line">
+            <span class="bead" style="left: 6%;"></span>
+            <span class="bead" style="left: 13%;"></span>
+            <span class="bead sig" style="left: 19%;"></span>
+            <span class="bead" style="left: 27%;"></span>
+            <span class="bead" style="left: 36%;"></span>
+            <span class="bead" style="left: 44%;"></span>
+            <span class="bead sig" style="left: 51%;"></span>
+            <span class="bead" style="left: 59%;"></span>
+            <span class="bead" style="left: 66%;"></span>
+            <span class="bead" style="left: 74%;"></span>
+            <span class="bead sig" style="left: 81%;"></span>
+            <span class="bead" style="left: 89%;"></span>
+            <span class="bead" style="left: 94%;"></span>
+            <span class="today-mark"></span>
+          </div>
+        </div>
+
+        <!-- Standalone project -->
+        <div class="spine project">
+          <div class="meta">
+            <div class="kind"><span class="dot"></span>Project · standalone</div>
+            <div class="name">Q2 client work — Ember Co.</div>
+            <div class="stats">12 captures · <strong>2 signals</strong></div>
+          </div>
+          <div class="spine-line">
+            <span class="bead" style="left: 62%;"></span>
+            <span class="bead" style="left: 66%;"></span>
+            <span class="bead" style="left: 70%;"></span>
+            <span class="bead sig" style="left: 74%;"></span>
+            <span class="bead" style="left: 78%;"></span>
+            <span class="bead" style="left: 82%;"></span>
+            <span class="bead" style="left: 86%;"></span>
+            <span class="bead sig" style="left: 90%;"></span>
+            <span class="bead" style="left: 94%;"></span>
+            <span class="today-mark"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Thread detail (what you see on click) -->
+      <div class="thread-detail">
+        <div class="back">← back to all threads</div>
+        <div class="crumbs"><span class="g">◎ Build a business that compounds</span><span class="sep">/</span><span>Throughline launch</span></div>
+        <h3>Throughline launch</h3>
+        <div style="font-family: var(--f-italic); font-style: italic; font-size: 17px; color: var(--ink-3); margin-bottom: 24px; max-width: 560px;">A good week is one where we shipped something a real user noticed and said hmm, <em>that's interesting</em>.</div>
+
+        <div class="stats-row">
+          <div class="stat"><strong>28</strong><span>Captures</span></div>
+          <div class="stat"><strong>5</strong><span>Signals</span></div>
+          <div class="stat"><strong>Feb 3</strong><span>Started</span></div>
+          <div class="stat"><strong>2 hr ago</strong><span>Last</span></div>
+          <div class="stat"><strong>1</strong><span>Pivots</span></div>
+        </div>
+
+        <div style="font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px;">Signals in this thread</div>
+
+        <div class="wk-signals">
+          <div class="wk-signal"><span class="when">Apr 18 · Morning</span><span class="txt">Morning thought: the 'organizing tax' on notes is the reason I stop journaling. If capture is free but sorting is deferred, the system survives bad days.</span><span class="ctx">#product #writing</span></div>
+          <div class="wk-signal"><span class="when">Apr 14 · Midday</span><span class="txt">The launch feels closer when I stop polishing the homepage and start writing about the <em>problem</em>.</span><span class="ctx">#writing</span></div>
+          <div class="wk-signal"><span class="when">Mar 29 · Evening</span><span class="txt">Mateo's pushback on the $29 tier is right — it reads 'consumer' when we want 'pro'.</span><span class="ctx">#pricing</span></div>
+          <div class="wk-signal"><span class="when">Mar 12 · Pivot</span><span class="txt" style="color: var(--pivot); font-style: italic;">Simple capture → capture + weekly review. Reframed the whole value prop.</span><span class="ctx" style="color: var(--pivot);">#pivot</span></div>
+          <div class="wk-signal"><span class="when">Feb 20 · Afternoon</span><span class="txt">The name came out of a conversation with Priya — "you want a throughline, not a list."</span><span class="ctx">#naming</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rationale">
+      <div>Design notes</div>
+      <ul>
+        <li>The spine IS the metaphor. Keeping each thread to a single horizontal line — no cards, no columns — makes the metaphor literal. The eye reads left-to-right as time, every time.</li>
+        <li>Bead size encodes importance: regular 7px, signal 11px with soft halo, pivot is a vertical bar that literally breaks the line.</li>
+        <li>A single "NOW" mark on every line anchors the eye. You see how stale or fresh each thread is relative to today.</li>
+        <li>Click any bead → opens the capture in a side panel. Click the thread label → drills into the Thread detail shown below.</li>
+        <li>Projects are indented and have a smaller bead size, so the parent goal always reads as the primary line.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────────────────
+       PROPOSAL 3 — Timeline
+       ───────────────────────────────────────────────────────── -->
+  <section class="proposal">
+    <div class="sec-label"><span class="num">3</span><span>Timeline view</span></div>
+    <h2>One line for the <em>whole year</em>.</h2>
+    <p class="blurb">The year laid out horizontally. Above the line, bars rising for each week's capture density — gold portions for signals. Crossing the line, vertical ticks for pivot moments, each with a short label. Above everything, ribbons showing when each goal and project was active. Click any week to expand its signals below. This is the "year in review" you can scroll through in 10 seconds.</p>
+
+    <div class="mock">
+      <div class="mock-head">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span>Throughline → Timeline</span>
+        <span>2026 · 16 weeks in</span>
+      </div>
+
+      <div class="tl">
+        <div class="tl-head">
+          <div>
+            <h3>The year in <em>one line</em>.</h3>
+            <div style="font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-4); margin-top: 6px;">Density above · Pivots on the line · Ribbons for what was live</div>
+          </div>
+          <div class="range">
+            <span class="nav">‹</span>
+            <span>2026</span>
+            <span class="nav">›</span>
+          </div>
+        </div>
+
+        <div class="tl-years">
+          <span class="yr">2023</span>
+          <span class="yr">2024</span>
+          <span class="yr">2025</span>
+          <span class="yr on">2026</span>
+        </div>
+
+        <!-- Ribbons: goals + projects as active periods -->
+        <div class="tl-ribbons">
+          <div class="tl-ribbon goal">
+            <span class="label"><span class="d"></span>Build a business</span>
+            <span class="band" style="left: 200px;"></span>
+          </div>
+          <div class="tl-ribbon project">
+            <span class="label"><span class="d"></span>Throughline launch</span>
+            <span class="band" style="left: 260px; right: 60%;"></span>
+          </div>
+          <div class="tl-ribbon goal">
+            <span class="label"><span class="d"></span>Write every day</span>
+            <span class="band" style="left: 200px;"></span>
+          </div>
+          <div class="tl-ribbon goal">
+            <span class="label"><span class="d"></span>Present with family</span>
+            <span class="band" style="left: 200px;"></span>
+          </div>
+          <div class="tl-ribbon project">
+            <span class="label"><span class="d"></span>Ember Co. · Q2</span>
+            <span class="band" style="left: 48%; right: 18%;"></span>
+          </div>
+        </div>
+
+        <!-- The actual year line with bars above -->
+        <div class="year-line">
+          <div class="year-left-label">Week activity</div>
+
+          <!-- Bars above line -->
+          <div class="year-bars">
+            <!-- 52 weeks -->
+            <div class="wk"><div class="blk" style="height: 8px;"></div><div class="blk sig" style="height: 2px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 12px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 18px;"></div><div class="blk sig" style="height: 4px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 6px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 22px;"></div><div class="blk sig" style="height: 6px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 14px;"></div><div class="blk sig" style="height: 2px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 9px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 30px;"></div><div class="blk sig" style="height: 8px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 16px;"></div><div class="blk sig" style="height: 3px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 20px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 28px;"></div><div class="blk sig" style="height: 5px;"></div></div>
+            <div class="wk on"><div class="blk" style="height: 42px;"></div><div class="blk sig" style="height: 12px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 36px;"></div><div class="blk sig" style="height: 4px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 22px;"></div><div class="blk sig" style="height: 2px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 18px;"></div></div>
+            <div class="wk"><div class="blk" style="height: 24px;"></div><div class="blk sig" style="height: 6px;"></div></div>
+            <!-- Rest of year (projected / empty) -->
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+            <div class="wk"><div class="blk" style="height: 4px; opacity: 0.15;"></div></div>
+          </div>
+
+          <!-- Pivots punch through the line -->
+          <div class="year-pivots">
+            <div class="year-pivot" style="left: 14%;"><span class="lbl">Mar 12 — Pivot</span></div>
+            <div class="year-pivot" style="left: 22%;"><span class="lbl">Apr 1 — Pricing</span></div>
+          </div>
+
+          <!-- Axis with month markers -->
+          <div class="year-axis">
+            <span class="month" style="left: 0%;">Jan</span>
+            <span class="month" style="left: 8%;">Feb</span>
+            <span class="month" style="left: 17%;">Mar</span>
+            <span class="month" style="left: 25%;">Apr</span>
+            <span class="month" style="left: 33%;">May</span>
+            <span class="month" style="left: 42%;">Jun</span>
+            <span class="month" style="left: 50%;">Jul</span>
+            <span class="month" style="left: 58%;">Aug</span>
+            <span class="month" style="left: 67%;">Sep</span>
+            <span class="month" style="left: 75%;">Oct</span>
+            <span class="month" style="left: 83%;">Nov</span>
+            <span class="month" style="left: 92%;">Dec</span>
+          </div>
+        </div>
+
+        <!-- Selected week detail -->
+        <div class="tl-week-detail">
+          <div class="wk-head">
+            <div>
+              <div style="font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 4px;">Week 12 · Mar 16 — Mar 22</div>
+              <div class="wk-title">A week about <em>pricing</em> and <em>naming</em>.</div>
+            </div>
+            <div class="wk-stats"><span>16 captures</span><span><strong>4 signals</strong></span><span>1 pivot</span></div>
+          </div>
+          <div class="wk-signals">
+            <div class="wk-signal"><span class="when">Mon · 08:14</span><span class="txt">Heard myself say "the throughline" in the meeting — it's the right word. It describes what's scarce.</span><span class="ctx">#naming #product</span></div>
+            <div class="wk-signal"><span class="when">Wed · 10:47</span><span class="txt">Mateo pushed back on the $29 tier. Says it reads 'consumer' when we want 'pro'. He's right.</span><span class="ctx">#pricing</span></div>
+            <div class="wk-signal"><span class="when">Fri · 14:22</span><span class="txt" style="color: var(--pivot); font-style: italic;">Reframe the product from 'simple capture' to 'capture + weekly review'.</span><span class="ctx" style="color: var(--pivot);">#pivot</span></div>
+            <div class="wk-signal"><span class="when">Fri · 19:40</span><span class="txt">Leo asked why grown-ups 'look at phones at dinner.' Filed under: not a product insight, but the thing all product insights should serve.</span><span class="ctx">#family</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rationale">
+      <div>Design notes</div>
+      <ul>
+        <li>A single horizontal year line is the unifying element — pivots interrupt it, bars rise from it, ribbons run above it. Everything anchors to the same axis.</li>
+        <li>Bars show two stacked segments per week: total activity (ink) + signal portion (gold). The gold always grows from the base so you read density and quality together.</li>
+        <li>Future weeks are drawn as faint stubs so the year always feels whole — you're not looking at "blank space", you're looking at "what's to come."</li>
+        <li>Ribbons let you answer "what was I actually working on in April" without reading any text — patterns emerge visually.</li>
+        <li>Clicking a week expands it below with the signals rewritten as an editorial paragraph — the week becomes a tiny essay, not a list.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="footer">
+    <div>Next step — if these three feel right</div>
+    <div class="next">Integrate into the live prototype behind the <span style="font-family: var(--f-mono); font-size: 13px;">Threads</span> and <span style="font-family: var(--f-mono); font-size: 13px;">Timeline</span> nav tabs, and wire the <span style="font-family: var(--f-mono); font-size: 13px;">+ new</span> tiles in the sidebar. About 400 lines of React.</div>
+  </div>
+
+</div>
+</body>
+</html>
