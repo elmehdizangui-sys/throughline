@@ -6,6 +6,10 @@ vi.mock("@/lib/throughline-service", () => ({
   createEntry: vi.fn(),
 }));
 
+vi.mock("@/lib/auth", () => ({
+  getAuthUser: vi.fn().mockResolvedValue({ id: "test-user-id" }),
+}));
+
 describe("POST /api/entries", () => {
   const createEntryMock = vi.mocked(createEntry);
 
@@ -49,6 +53,7 @@ describe("POST /api/entries", () => {
         content: "New entry",
         priority: "dunya",
       }),
+      "test-user-id",
     );
   });
 });

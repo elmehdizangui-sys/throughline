@@ -720,3 +720,115 @@
     overflow-x: auto;
   }
 }
+
+/* ─── Mobile: feed & composer ────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .feed-shell {
+    padding: 12px 16px 80px;
+  }
+
+  .feed-head {
+    gap: 10px;
+  }
+
+  .feed-filters {
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .feed-filters button {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  .composer-area {
+    padding: 12px 14px;
+  }
+
+  .composer-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .day-divider {
+    margin: 18px 0 8px;
+  }
+
+  .entry {
+    padding: 12px 14px 10px;
+  }
+
+  .entry .meta {
+    gap: 6px;
+  }
+
+  .entry .actions {
+    opacity: 1;
+  }
+
+  .commitments-widget {
+    margin: 0 0 8px;
+    padding: 12px 14px;
+  }
+}
+
+/* ─── Mobile: sidebar layout collapses to bottom nav ────────────────────── */
+
+@media (max-width: 640px) {
+  html[data-layout="sidebar"] body {
+    padding-left: 0;
+    padding-bottom: 60px;
+  }
+
+  html[data-layout="sidebar"] .sidebar {
+    display: none;
+  }
+
+  .masthead {
+    position: sticky;
+    top: 0;
+  }
+
+  .bigline-bar {
+    position: sticky;
+    top: 57px;
+  }
+}
+
+/* ─── Mobile: timeline & threads ─────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .timeline-grid {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .thread-detail-panel,
+  .week-detail {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    border-radius: 0;
+    max-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .threads-shell {
+    padding: 12px 16px 60px;
+  }
+}
+
+/* ─── Mobile: composer: goal/project status buttons ─────────────────────── */
+
+@media (max-width: 640px) {
+  .composer-field {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .composer-choices {
+    flex-wrap: wrap;
+  }
+}

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { patchEntry } from "@/lib/throughline-service";
+import { getAuthUser } from "@/lib/auth";
 import type { PatchEntryPayload } from "@/lib/types";
 
 interface Params {
@@ -25,6 +26,9 @@ function hasSupportedPatchField(patch: PatchEntryPayload) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
   try {
     const { id } = await params;
     const body = (await request.json()) as PatchEntryPayload;

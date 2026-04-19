@@ -296,11 +296,11 @@ a {
 }
 
 .slot.goal .dot {
-  background: var(--accent);
+  background: var(--slot-color, var(--accent));
 }
 
 .slot.project .dot {
-  background: var(--ink-2);
+  background: var(--slot-color, var(--ink-2));
 }
 
 .slot .slot-text {
@@ -805,3 +805,95 @@ a {
   color: var(--paper);
 }
 
+
+/* ─── Status dots ────────────────────────────────────────────────────────── */
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.status-dot.paused {
+  background: oklch(0.72 0.14 60);
+}
+
+.status-dot.someday {
+  background: var(--ink-4);
+}
+
+.status-dot.archived {
+  background: var(--ink-4);
+  opacity: 0.45;
+}
+
+.slot.archived {
+  opacity: 0.45;
+}
+
+/* ─── Akhirah lens button ─────────────────────────────────────────────────── */
+
+.akhirah-lens-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms, background 150ms;
+}
+
+.akhirah-lens-btn:hover {
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.akhirah-lens-btn.on {
+  color: var(--accent);
+  border-color: var(--accent-soft);
+  background: var(--accent-soft);
+}
+
+/* ─── Mobile: masthead & bigline ─────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .masthead-inner {
+    padding: 0 16px;
+  }
+
+  .nav a {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  .bigline-inner {
+    padding: 0 16px;
+    gap: 8px;
+  }
+
+  .bigline-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bigline-grid {
+    gap: 6px;
+  }
+
+  .slot {
+    min-width: 100px;
+    padding: 8px 10px;
+  }
+
+  .slot .slot-text {
+    font-size: 12px;
+  }
+}

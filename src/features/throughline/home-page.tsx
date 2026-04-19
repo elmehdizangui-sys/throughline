@@ -18,6 +18,7 @@ import type {
   ThroughlineThreadsView,
   ThroughlineTimelineYear,
   ThroughlineTweaks,
+  ThroughlineWeekCommitment,
 } from "@/lib/types";
 import { BigLineBar, Masthead, Minimap, Sidebar, TweaksPanel } from "@/features/throughline/chrome";
 import { FeedView } from "@/features/throughline/feed";
@@ -27,6 +28,8 @@ import { TimelineView } from "@/features/throughline/timeline-view";
 import { WeeklyReview } from "@/features/throughline/weekly-review";
 import { GoalProjectComposer, type ComposerSubmitPayload } from "@/features/throughline/goal-project-composer";
 import { ProfileSettings, type ProfileSettingsFormValues } from "@/features/throughline/profile-settings";
+import { CommitmentsWidget } from "@/features/throughline/commitments-widget";
+import { ErrorBoundary } from "@/features/throughline/error-boundary";
 
 function currentYear() {
   return new Date().getUTCFullYear();
@@ -36,10 +39,20 @@ function clampYear(year: number) {
   return Math.max(2000, Math.min(2100, year));
 }
 
+function getWeekKey(): string {
+  const now = new Date();
+  const startOfYear = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+  const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+  const week = Math.ceil((dayOfYear + 1) / 7);
+  return `${now.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
+}
+
 export function ThroughlineHomePage() {
   const [goals, setGoals] = useState<ThroughlineGoal[]>([]);
   const [projects, setProjects] = useState<ThroughlineProject[]>([]);
   const [entries, setEntries] = useState<ThroughlineEntry[]>([]);
+  const [commitments, setCommitments] = useState<ThroughlineWeekCommitment[]>([]);
+  const [currentWeekKey] = useState(() => getWeekKey());
 
   const [tweaks, setTweaks] = useState<ThroughlineTweaks>(() => {
     try {
@@ -99,28 +112,6 @@ export function ThroughlineHomePage() {
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
-  const loadProfile = useCallback(async (nextUserId: string, nextUserEmail?: string | null) => {
-    const supabase = getSupabaseBrowserClient();
-    const { data, error } = await supabase
-      .from("throughline_profiles")
-      .select("id, email, display_name, bio, created_at, updated_at")
-      .eq("id", nextUserId)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Failed to load profile", error);
-      setProfile((state) => state ?? { id: nextUserId, email: nextUserEmail ?? null, display_name: "", bio: "" });
-      return;
-    }
-
-    if (!data) {
-      setProfile({ id: nextUserId, email: nextUserEmail ?? null, display_name: "", bio: "" });
-      return;
-    }
-
-    setProfile(data as ThroughlineProfile);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
     const supabase = getSupabaseBrowserClient();
@@ -136,7 +127,6 @@ export function ThroughlineHomePage() {
       setUserId(nextUser.id);
       setUserEmail(nextUser.email ?? undefined);
       setAuthResolved(true);
-      void loadProfile(nextUser.id, nextUser.email);
     };
 
     void supabase.auth
@@ -160,7 +150,7 @@ export function ThroughlineHomePage() {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, [loadProfile]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,6 +163,24 @@ export function ThroughlineHomePage() {
           setGoals(data.goals);
           setProjects(data.projects);
           setEntries(data.entries);
+          setCommitments(data.commitments ?? []);
+
+          if (data.profile != null) {
+            setProfile(data.profile);
+            setUserId(data.profile.id);
+            setUserEmail(data.profile.email ?? undefined);
+          }
+
+          const savedTweaks = (() => {
+            try {
+              return JSON.parse(localStorage.getItem("throughline-tweaks") ?? "{}") as Partial<ThroughlineTweaks>;
+            } catch {
+              return {} as Partial<ThroughlineTweaks>;
+            }
+          })();
+          const profileTweaks = data.profile?.tweaks ?? {};
+          const mergedTweaks = { ...DEFAULT_TWEAKS, ...savedTweaks, ...profileTweaks };
+          setTweaks(mergedTweaks);
         }
       } catch {
         // Silent fallback to current state.
@@ -237,8 +245,31 @@ export function ThroughlineHomePage() {
   }, [view, timelineYear, entries, goals, projects]);
 
   const setTweak = <K extends keyof ThroughlineTweaks>(key: K, value: ThroughlineTweaks[K]) => {
-    setTweaks((state) => ({ ...state, [key]: value }));
+    setTweaks((prev) => {
+      const updated = { ...prev, [key]: value };
+      localStorage.setItem("throughline-tweaks", JSON.stringify(updated));
+      void fetch("/api/profile/tweaks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+      return updated;
+    });
   };
+
+  const toggleAkhirahLens = useCallback(() => {
+    const next = !(tweaks.akhirahLens ?? false);
+    setTweaks((prev) => {
+      const updated = { ...prev, akhirahLens: next };
+      localStorage.setItem("throughline-tweaks", JSON.stringify(updated));
+      void fetch("/api/profile/tweaks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      }).catch(() => {});
+      return updated;
+    });
+  }, [tweaks.akhirahLens]);
 
   const addEntry = useCallback(async (payload: CreateEntryPayload) => {
     try {
@@ -422,6 +453,34 @@ export function ThroughlineHomePage() {
     [],
   );
 
+  const addCommitment = useCallback(async (text: string) => {
+    const response = await fetch("/api/commitments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, week_key: currentWeekKey }),
+    });
+    if (!response.ok) return;
+    const created = (await response.json()) as ThroughlineWeekCommitment;
+    setCommitments((state) => [...state, created]);
+  }, [currentWeekKey]);
+
+  const toggleCommitment = useCallback(async (id: string, done: boolean) => {
+    setCommitments((state) => state.map((c) => (c.id === id ? { ...c, done } : c)));
+    const response = await fetch(`/api/commitments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ done }),
+    });
+    if (!response.ok) {
+      setCommitments((state) => state.map((c) => (c.id === id ? { ...c, done: !done } : c)));
+    }
+  }, []);
+
+  const deleteCommitment = useCallback(async (id: string) => {
+    setCommitments((state) => state.filter((c) => c.id !== id));
+    await fetch(`/api/commitments/${id}`, { method: "DELETE" });
+  }, []);
+
   const filtered = useMemo(() => {
     let list = entries;
     if (contextFilter) {
@@ -521,7 +580,6 @@ export function ThroughlineHomePage() {
           setUserId(user.id);
           setUserEmail(user.email ?? undefined);
           setAuthResolved(true);
-          void loadProfile(user.id, user.email);
         }
       }
 
@@ -568,7 +626,7 @@ export function ThroughlineHomePage() {
         setProfileSaving(false);
       }
     },
-    [authResolved, loadProfile, userEmail, userId],
+    [authResolved, userEmail, userId],
   );
 
   const signOut = useCallback(async () => {
@@ -582,116 +640,134 @@ export function ThroughlineHomePage() {
   }, []);
 
   return (
-    <>
-      <Sidebar
-        goals={goals}
-        projects={projects}
-        activeFilter={contextFilter}
-        onSlotClick={onSlotClick}
-        onCreate={(kind) => openCreateComposer(kind)}
-        onEdit={(kind, id) => openEditComposer(kind, id)}
-        onStartReview={() => setReviewOpen(true)}
-      />
-      <Masthead
-        onOpenTweaks={() => setTweaksOpen(true)}
-        onView={setView}
-        view={view}
-        userLabel={userLabel}
-        userEmail={userEmail}
-        onOpenProfileSettings={() => {
-          setProfileSaveError(null);
-          setProfileOpen(true);
-        }}
-      />
-      <BigLineBar
-        goals={goals}
-        projects={projects}
-        activeFilter={contextFilter}
-        onSlotClick={onSlotClick}
-        onCreateSlot={(kind) => openCreateComposer(kind)}
-        onEditSlot={(kind, id) => openEditComposer(kind, id)}
-        onStartReview={() => setReviewOpen(true)}
-      />
-      <Minimap data={minimap} />
-
-      {view === "feed" ? (
-        <FeedView
-          activeGreeting={activeGreeting}
-          greetingName={greetingName}
-          entries={entries}
+    <ErrorBoundary>
+      <>
+        <Sidebar
           goals={goals}
           projects={projects}
-          groupedEntries={grouped}
-          filteredEntries={filtered}
-          filter={filter}
-          setFilter={setFilter}
-          contextFilter={contextFilter}
-          onClearContextFilter={() => setContextFilter(null)}
-          onSetContextFilter={(nextFilter) => setContextFilter(nextFilter)}
-          onAddEntry={addEntry}
-          onToggleStar={toggleStar}
-          onTogglePromote={togglePromote}
-          onMarkPivot={markAsPivot}
+          activeFilter={contextFilter}
+          onSlotClick={onSlotClick}
+          onCreate={(kind) => openCreateComposer(kind)}
+          onEdit={(kind, id) => openEditComposer(kind, id)}
+          onStartReview={() => setReviewOpen(true)}
         />
-      ) : null}
-      {view === "threads" ? <ThreadsView data={threadsData} isLoading={threadsLoading} entries={entries} /> : null}
-      {view === "map" ? (
-        <TimelineView
-          data={timelineData}
-          isLoading={timelineLoading}
-          entries={entries}
-          onYearChange={(nextYear) => setTimelineYear(clampYear(nextYear))}
-        />
-      ) : null}
-
-      {reviewOpen ? <WeeklyReview entries={entries} onClose={() => setReviewOpen(false)} onApply={applyReview} /> : null}
-      <GoalProjectComposer
-        open={composerOpen}
-        initialKind={composerKind}
-        editingGoal={editingGoalId ? goals.find((goal) => goal.id === editingGoalId) ?? null : null}
-        editingProject={editingProjectId ? projects.find((project) => project.id === editingProjectId) ?? null : null}
-        preselectedGoalId={composerPreselectedGoalId}
-        goals={goals}
-        onClose={() => setComposerOpen(false)}
-        onSubmit={handleComposerSubmit}
-      />
-      <ProfileSettings
-        open={profileOpen}
-        profile={profile}
-        email={userEmail}
-        isSaving={profileSaving}
-        errorMessage={profileSaveError}
-        onClose={() => setProfileOpen(false)}
-        onSave={saveProfile}
-        onSignOut={signOut}
-      />
-      <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} tweaks={tweaks} setTweak={setTweak} />
-
-      {!tweaksOpen ? (
-        <button
-          onClick={() => setTweaksOpen(true)}
-          style={{
-            position: "fixed",
-            bottom: 20,
-            right: 20,
-            zIndex: 40,
-            padding: "10px 14px",
-            borderRadius: 999,
-            border: "1px solid var(--rule-strong)",
-            background: "var(--card)",
-            color: "var(--ink-2)",
-            fontSize: 12,
-            cursor: "pointer",
-            boxShadow: "0 8px 20px -8px rgba(0,0,0,0.15)",
-            display: "inline-flex",
-            gap: 6,
-            alignItems: "center",
+        <Masthead
+          onOpenTweaks={() => setTweaksOpen(true)}
+          onView={setView}
+          view={view}
+          userLabel={userLabel}
+          userEmail={userEmail}
+          akhirahLens={tweaks.akhirahLens ?? false}
+          onToggleAkhirahLens={toggleAkhirahLens}
+          onOpenProfileSettings={() => {
+            setProfileSaveError(null);
+            setProfileOpen(true);
           }}
-          type="button"
-        >
-          <Icon.Settings /> Tweaks
-        </button>
-      ) : null}
-    </>
+        />
+        <BigLineBar
+          goals={goals}
+          projects={projects}
+          activeFilter={contextFilter}
+          onSlotClick={onSlotClick}
+          onCreateSlot={(kind) => openCreateComposer(kind)}
+          onEditSlot={(kind, id) => openEditComposer(kind, id)}
+          onStartReview={() => setReviewOpen(true)}
+        />
+        <Minimap data={minimap} />
+
+        {view === "feed" && (
+          <CommitmentsWidget
+            weekKey={currentWeekKey}
+            commitments={commitments}
+            onAdd={addCommitment}
+            onToggle={toggleCommitment}
+            onDelete={deleteCommitment}
+          />
+        )}
+
+        {view === "feed" ? (
+          <FeedView
+            activeGreeting={activeGreeting}
+            greetingName={greetingName}
+            entries={entries}
+            goals={goals}
+            projects={projects}
+            groupedEntries={grouped}
+            filteredEntries={filtered}
+            filter={filter}
+            setFilter={setFilter}
+            contextFilter={contextFilter}
+            onClearContextFilter={() => setContextFilter(null)}
+            onSetContextFilter={(nextFilter) => setContextFilter(nextFilter)}
+            onAddEntry={addEntry}
+            onToggleStar={toggleStar}
+            onTogglePromote={togglePromote}
+            onMarkPivot={markAsPivot}
+            akhirahLens={tweaks.akhirahLens ?? false}
+          />
+        ) : null}
+
+        {view === "threads" ? <ThreadsView data={threadsData} isLoading={threadsLoading} entries={entries} /> : null}
+
+        {view === "map" ? (
+          <TimelineView
+            data={timelineData}
+            isLoading={timelineLoading}
+            entries={entries}
+            onYearChange={(nextYear) => setTimelineYear(clampYear(nextYear))}
+          />
+        ) : null}
+
+        {reviewOpen ? <WeeklyReview entries={entries} onClose={() => setReviewOpen(false)} onApply={applyReview} /> : null}
+
+        <GoalProjectComposer
+          open={composerOpen}
+          initialKind={composerKind}
+          editingGoal={editingGoalId ? goals.find((goal) => goal.id === editingGoalId) ?? null : null}
+          editingProject={editingProjectId ? projects.find((project) => project.id === editingProjectId) ?? null : null}
+          preselectedGoalId={composerPreselectedGoalId}
+          goals={goals}
+          onClose={() => setComposerOpen(false)}
+          onSubmit={handleComposerSubmit}
+        />
+        <ProfileSettings
+          open={profileOpen}
+          profile={profile}
+          email={userEmail}
+          isSaving={profileSaving}
+          errorMessage={profileSaveError}
+          onClose={() => setProfileOpen(false)}
+          onSave={saveProfile}
+          onSignOut={signOut}
+        />
+        <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} tweaks={tweaks} setTweak={setTweak} />
+
+        {!tweaksOpen ? (
+          <button
+            onClick={() => setTweaksOpen(true)}
+            style={{
+              position: "fixed",
+              bottom: 20,
+              right: 20,
+              zIndex: 40,
+              padding: "10px 14px",
+              borderRadius: 999,
+              border: "1px solid var(--rule-strong)",
+              background: "var(--card)",
+              color: "var(--ink-2)",
+              fontSize: 12,
+              cursor: "pointer",
+              boxShadow: "0 8px 20px -8px rgba(0,0,0,0.15)",
+              display: "inline-flex",
+              gap: 6,
+              alignItems: "center",
+            }}
+            type="button"
+          >
+            <Icon.Settings /> Tweaks
+          </button>
+        ) : null}
+      </>
+    </ErrorBoundary>
   );
 }

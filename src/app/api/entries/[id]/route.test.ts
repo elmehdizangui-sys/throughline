@@ -6,6 +6,10 @@ vi.mock("@/lib/throughline-service", () => ({
   patchEntry: vi.fn(),
 }));
 
+vi.mock("@/lib/auth", () => ({
+  getAuthUser: vi.fn().mockResolvedValue({ id: "test-user-id" }),
+}));
+
 describe("PATCH /api/entries/[id]", () => {
   const patchEntryMock = vi.mocked(patchEntry);
 

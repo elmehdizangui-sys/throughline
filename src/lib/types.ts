@@ -9,6 +9,7 @@ export type FeedFilter = "all" | "starred" | "links" | "code";
 export type ContextFilterType = "goal" | "project" | "tag";
 export type ThreadKind = "goal" | "project";
 export type EntryPriority = "dunya" | "akhirah";
+export type GoalStatus = "active" | "paused" | "someday" | "archived";
 
 export interface ThroughlineLink {
   title: string;
@@ -24,6 +25,7 @@ export interface ThroughlineGoal {
   active_from?: string;
   active_to?: string;
   order_index?: number;
+  status?: GoalStatus;
 }
 
 export interface ThroughlineProject {
@@ -36,6 +38,7 @@ export interface ThroughlineProject {
   active_from?: string;
   active_to?: string;
   order_index?: number;
+  status?: GoalStatus;
 }
 
 export interface ThroughlineProfile {
@@ -43,6 +46,7 @@ export interface ThroughlineProfile {
   email?: string | null;
   display_name: string;
   bio: string;
+  tweaks?: ThroughlineTweaks | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -82,6 +86,16 @@ export interface ThroughlineTweaks {
   density: DensityMode;
   entry: EntryStyle;
   font: FontPairing;
+  akhirahLens?: boolean;
+}
+
+export interface ThroughlineWeekCommitment {
+  id: string;
+  week_key: string;
+  text: string;
+  done: boolean;
+  order_index: number;
+  created_at: string;
 }
 
 export interface ThroughlineBootstrap {
@@ -89,6 +103,9 @@ export interface ThroughlineBootstrap {
   projects: ThroughlineProject[];
   entries: ThroughlineEntry[];
   minimap: MinimapWeek[];
+  profile?: ThroughlineProfile | null;
+  commitments?: ThroughlineWeekCommitment[];
+  hasMoreEntries?: boolean;
 }
 
 export interface ThroughlineContextFilter {
@@ -132,6 +149,7 @@ export interface CreateGoalPayload {
   active_from?: string;
   active_to?: string;
   order_index?: number;
+  status?: GoalStatus;
 }
 
 export interface UpdateGoalPayload extends Partial<CreateGoalPayload> {}
@@ -145,9 +163,22 @@ export interface CreateProjectPayload {
   active_from?: string;
   active_to?: string;
   order_index?: number;
+  status?: GoalStatus;
 }
 
 export interface UpdateProjectPayload extends Partial<CreateProjectPayload> {}
+
+export interface CreateCommitmentPayload {
+  week_key: string;
+  text: string;
+  order_index?: number;
+}
+
+export interface PatchCommitmentPayload {
+  text?: string;
+  done?: boolean;
+  order_index?: number;
+}
 
 export interface ThroughlineSignalItem {
   id: string;

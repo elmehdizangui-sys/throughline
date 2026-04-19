@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { getBootstrapData } from "@/lib/throughline-service";
+import { getAuthUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
   try {
     const data = await getBootstrapData();
     return NextResponse.json(data);

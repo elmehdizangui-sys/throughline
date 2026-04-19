@@ -1,5 +1,6 @@
 import { Icon } from "@/features/throughline/shared";
 import type {
+  GoalStatus,
   MainView,
   MinimapWeek,
   ThroughlineContextFilter,
@@ -18,6 +19,8 @@ export function Masthead({
   userLabel,
   userEmail,
   onOpenProfileSettings,
+  akhirahLens,
+  onToggleAkhirahLens,
 }: {
   onOpenTweaks: () => void;
   onView: (next: MainView) => void;
@@ -25,6 +28,8 @@ export function Masthead({
   userLabel?: string;
   userEmail?: string;
   onOpenProfileSettings: () => void;
+  akhirahLens?: boolean;
+  onToggleAkhirahLens?: () => void;
 }) {
   const source = userLabel?.trim() || userEmail?.trim() || "User";
   const initials = source
@@ -74,6 +79,19 @@ export function Masthead({
             Timeline
           </a>
           <span className="sep" />
+          {onToggleAkhirahLens && (
+            <button
+              className={`akhirah-lens-btn ${akhirahLens ? "on" : ""}`}
+              onClick={onToggleAkhirahLens}
+              type="button"
+              title={akhirahLens ? "Akhirah lens on – click to disable" : "Enable akhirah lens"}
+              aria-pressed={akhirahLens ?? false}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M13 10.5a6 6 0 01-7.5-7.5A6 6 0 1013 10.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
           <a
             href="#"
             onClick={(event) => {
@@ -92,6 +110,11 @@ export function Masthead({
       </div>
     </header>
   );
+}
+
+function StatusDot({ status }: { status: GoalStatus }) {
+  if (status === "active") return null;
+  return <span className={`status-dot ${status}`} aria-label={status} />;
 }
 
 export function BigLineBar({
@@ -127,7 +150,8 @@ export function BigLineBar({
             {goals.map((goal, index) => (
               <div
                 key={goal.id}
-                className={`slot goal ${activeFilter?.type === "goal" && activeFilter.id === goal.id ? "active" : ""}`}
+                className={`slot goal ${activeFilter?.type === "goal" && activeFilter.id === goal.id ? "active" : ""} ${goal.status === "archived" ? "archived" : ""}`}
+                style={goal.color ? ({ "--slot-color": goal.color } as React.CSSProperties) : undefined}
                 onClick={() => onSlotClick("goal", goal.id)}
                 role="button"
                 tabIndex={0}
@@ -138,7 +162,10 @@ export function BigLineBar({
                 <div className="slot-kind">
                   <span className="dot" /> Life Goal 0{index + 1}
                 </div>
-                <div className="slot-text">{goal.name}</div>
+                <div className="slot-text">
+                  {goal.name}
+                  {goal.status && goal.status !== "active" && <StatusDot status={goal.status} />}
+                </div>
                 <button
                   className="slot-edit"
                   onClick={(event) => {
@@ -161,7 +188,8 @@ export function BigLineBar({
             {projects.map((project, index) => (
               <div
                 key={project.id}
-                className={`slot project ${activeFilter?.type === "project" && activeFilter.id === project.id ? "active" : ""}`}
+                className={`slot project ${activeFilter?.type === "project" && activeFilter.id === project.id ? "active" : ""} ${project.status === "archived" ? "archived" : ""}`}
+                style={project.color ? ({ "--slot-color": project.color } as React.CSSProperties) : undefined}
                 onClick={() => onSlotClick("project", project.id)}
                 role="button"
                 tabIndex={0}
@@ -172,7 +200,10 @@ export function BigLineBar({
                 <div className="slot-kind">
                   <span className="dot" /> Project 0{index + 1}
                 </div>
-                <div className="slot-text">{project.name}</div>
+                <div className="slot-text">
+                  {project.name}
+                  {project.status && project.status !== "active" && <StatusDot status={project.status} />}
+                </div>
                 <button
                   className="slot-edit"
                   onClick={(event) => {
@@ -232,7 +263,8 @@ export function Sidebar({
         {goals.map((goal, index) => (
           <div
             key={goal.id}
-            className={`item ${activeFilter?.type === "goal" && activeFilter.id === goal.id ? "active" : ""}`}
+            className={`item ${activeFilter?.type === "goal" && activeFilter.id === goal.id ? "active" : ""} ${goal.status === "archived" ? "archived" : ""}`}
+            style={goal.color ? ({ "--slot-color": goal.color } as React.CSSProperties) : undefined}
             onClick={() => onSlotClick("goal", goal.id)}
             role="button"
             tabIndex={0}
@@ -241,7 +273,10 @@ export function Sidebar({
             }}
           >
             <span className="kind">Goal 0{index + 1}</span>
-            <span className="t">{goal.name}</span>
+            <span className="t">
+              {goal.name}
+              {goal.status && goal.status !== "active" && <StatusDot status={goal.status} />}
+            </span>
             <button
               className="item-edit"
               onClick={(event) => {
@@ -263,7 +298,8 @@ export function Sidebar({
         {projects.map((project, index) => (
           <div
             key={project.id}
-            className={`item ${activeFilter?.type === "project" && activeFilter.id === project.id ? "active" : ""}`}
+            className={`item ${activeFilter?.type === "project" && activeFilter.id === project.id ? "active" : ""} ${project.status === "archived" ? "archived" : ""}`}
+            style={project.color ? ({ "--slot-color": project.color } as React.CSSProperties) : undefined}
             onClick={() => onSlotClick("project", project.id)}
             role="button"
             tabIndex={0}
@@ -272,7 +308,10 @@ export function Sidebar({
             }}
           >
             <span className="kind">Project 0{index + 1}</span>
-            <span className="t">{project.name}</span>
+            <span className="t">
+              {project.name}
+              {project.status && project.status !== "active" && <StatusDot status={project.status} />}
+            </span>
             <button
               className="item-edit"
               onClick={(event) => {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createProject } from "@/lib/throughline-service";
+import { getAuthUser } from "@/lib/auth";
 import type { CreateProjectPayload } from "@/lib/types";
 
 function isValidDate(value: string | undefined) {
@@ -8,6 +9,9 @@ function isValidDate(value: string | undefined) {
 }
 
 export async function POST(request: Request) {
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
   try {
     const payload = (await request.json()) as CreateProjectPayload;
     if (!payload.name || !payload.name.trim()) {
@@ -17,16 +21,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Invalid date field in project payload." }, { status: 400 });
     }
 
-    const project = await createProject({
-      name: payload.name.trim(),
-      goal_id: payload.goal_id ?? null,
-      color: payload.color,
-      tag: payload.tag,
-      target_date: payload.target_date,
-      active_from: payload.active_from,
-      active_to: payload.active_to,
-      order_index: payload.order_index,
-    });
+    const project = await createProject(
+      {
+        name: payload.name.trim(),
+        goal_id: payload.goal_id ?? null,
+        color: payload.color,
+        tag: payload.tag,
+        target_date: payload.target_date,
+        active_from: payload.active_from,
+        active_to: payload.active_to,
+        order_index: payload.order_index,
+        status: payload.status,
+      },
+      user.id,
+    );
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
     console.error("Failed to create project", error);

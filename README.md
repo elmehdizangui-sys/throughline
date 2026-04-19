@@ -71,15 +71,67 @@ Open [http://localhost:3000](http://localhost:3000).
 - No in-memory seed goals/projects/entries are used.
 - If your tables are empty, the UI starts empty until you add data.
 
+## Features added (claude-features branch)
+
+### Weekly Commitments
+Up to 5 short commitments per week, shown above the feed. Check off, delete, track progress. Persisted in `throughline_commitments`. API: `GET/POST /api/commitments`, `PATCH/DELETE /api/commitments/:id`.
+
+### Akhirah Lens
+Crescent moon button in the masthead nav. When enabled, dunya-priority entries dim and akhirah-priority entries glow. State persists to `throughline_profiles.tweaks` and syncs across sessions. API: `POST /api/profile/tweaks`.
+
+### Goal & Project Status
+Goals and projects now have a `status` field: `active | paused | someday | archived`.
+- Composer shows a pill selector (active=green dot, paused=amber dot, someday=gray dot)
+- Sidebar items get a left color-flag border using the goal/project color
+- BigLineBar dots use the goal/project color
+- Archived items are visually muted
+
+### Color-coded Goals & Projects
+Each goal or project stores a `color` (oklch string). The color is shown as:
+- A colored dot in the BigLineBar
+- A left border stripe in the sidebar
+- Inherited by child projects when linked to a goal
+
+### Time-aware Entry Placeholder
+The entry input shows context-sensitive placeholder text based on time of day (morning, midday, afternoon, evening, night, late night).
+
+### Tweaks Persist to DB
+UI preferences (theme, accent, layout, density, entry style, font, akhirah lens) now sync to `throughline_profiles.tweaks` via `POST /api/profile/tweaks`. On load, DB tweaks override localStorage.
+
+### Mobile Responsive Layout
+CSS breakpoints at ≤640px: masthead collapses, sidebar hides, composer fields stack, feed/timeline/threads adapt to single-column.
+
+### Error Boundary
+A React error boundary (`ErrorBoundary`) wraps the app surface. Catches render crashes and shows a "Try again" reset button.
+
+### Multi-User Infrastructure (DB-ready, single user today)
+Migration `20260420_multi_user_infra.sql` adds `user_id` FK + RLS policies to all tables. All API routes enforce `getAuthUser()` defense-in-depth (including read routes: bootstrap, threads, timeline). Ready for multi-user without further DB changes.
+
+### Bootstrap Performance
+Initial entry load capped at 60 entries. `hasMoreEntries` flag returned for future infinite scroll.
+
+### Security Hardening
+- `getAuthUser()` on every API route including read-only ones
+- Tweaks endpoint validates allowlist of known keys before writing to DB
+- Entry content capped at 100,000 characters
+- `week_key` format validated with regex on commitments routes
+
+---
+
 ## API routes
 
-- `GET /api/bootstrap` - goals, projects, entries, minimap
+- `GET /api/bootstrap` - goals, projects, entries (max 60), profile, commitments, minimap
 - `POST /api/entries` - create entry (`priority`: `dunya` or `akhirah`)
 - `PATCH /api/entries/:id` - update entry flags (`starred`, `archived`, `signal`, pivot metadata, `priority`)
-- `POST /api/goals` - create a goal
+- `POST /api/goals` - create a goal (with `color`, `status`)
 - `PATCH /api/goals/:id` - update a goal
-- `POST /api/projects` - create a project
+- `POST /api/projects` - create a project (with `color`, `status`, `goal_id`)
 - `PATCH /api/projects/:id` - update a project
+- `GET /api/commitments?week=YYYY-WNN` - commitments for a given week
+- `POST /api/commitments` - create a commitment
+- `PATCH /api/commitments/:id` - toggle done / reorder
+- `DELETE /api/commitments/:id` - delete a commitment
+- `POST /api/profile/tweaks` - sync UI preferences to DB
 - `GET /api/threads?months=6` - aggregated spine data for Threads view
 - `GET /api/timeline?year=2026` - aggregated year-line data for Timeline view
 

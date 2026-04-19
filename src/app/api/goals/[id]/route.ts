@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updateGoal } from "@/lib/throughline-service";
+import { getAuthUser } from "@/lib/auth";
 import type { UpdateGoalPayload } from "@/lib/types";
 
 interface Params {
@@ -12,6 +13,9 @@ function isValidDate(value: string | undefined | null) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
   try {
     const { id } = await params;
     const payload = (await request.json()) as UpdateGoalPayload;

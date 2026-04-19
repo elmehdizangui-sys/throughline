@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   CreateGoalPayload,
   CreateProjectPayload,
+  GoalStatus,
   ThroughlineGoal,
   ThroughlineProject,
   UpdateGoalPayload,
@@ -46,6 +47,7 @@ export function GoalProjectComposer({
   const [targetDate, setTargetDate] = useState("");
   const [color, setColor] = useState(COLOR_CHOICES[0]);
   const [goalId, setGoalId] = useState<string | null>(null);
+  const [status, setStatus] = useState<GoalStatus>("active");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -57,6 +59,7 @@ export function GoalProjectComposer({
       setTargetDate(editingGoal.target_date ?? "");
       setColor(editingGoal.color ?? COLOR_CHOICES[0]);
       setGoalId(null);
+      setStatus(editingGoal.status ?? "active");
       return;
     }
     if (editingProject) {
@@ -64,12 +67,14 @@ export function GoalProjectComposer({
       setTargetDate(editingProject.target_date ?? "");
       setColor(editingProject.color ?? goals.find((goal) => goal.id === editingProject.goal_id)?.color ?? COLOR_CHOICES[0]);
       setGoalId(editingProject.goal_id ?? null);
+      setStatus(editingProject.status ?? "active");
       return;
     }
     setName("");
     setTargetDate("");
     setGoalId(preselectedGoalId ?? null);
     setColor(goals.find((goal) => goal.id === preselectedGoalId)?.color ?? COLOR_CHOICES[0]);
+    setStatus("active");
   }, [open, initialKind, editingGoal, editingProject, preselectedGoalId, goals]);
 
   useEffect(() => {
@@ -101,6 +106,7 @@ export function GoalProjectComposer({
             name: trimmed,
             color,
             target_date: targetDate || undefined,
+            status,
           },
         });
       } else {
@@ -112,6 +118,7 @@ export function GoalProjectComposer({
             goal_id: goalId,
             color: goalId ? goals.find((goal) => goal.id === goalId)?.color ?? color : color,
             target_date: targetDate || undefined,
+            status,
           },
         });
       }
@@ -152,6 +159,23 @@ export function GoalProjectComposer({
               placeholder={kind === "goal" ? "Name the line you want to pursue" : "Name the project you want to ship"}
               autoFocus
             />
+          </div>
+
+          <div className="composer-field">
+            <label className="composer-label">Status</label>
+            <div className="composer-type-switch">
+              {(["active", "paused", "someday"] as const).map((s) => (
+                <button
+                  key={s}
+                  className={`status-choice ${s}${status === s ? " on" : ""}`}
+                  onClick={() => setStatus(s)}
+                  type="button"
+                >
+                  <span className="status-choice-dot" />
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
 
           {kind === "project" ? (

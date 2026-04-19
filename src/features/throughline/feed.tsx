@@ -43,6 +43,17 @@ function firstLinkFromText(text: string): ThroughlineLink | undefined {
   };
 }
 
+function getTimePlaceholder(): string {
+  const hour = new Date().getHours();
+  if (hour < 6) return "Late night thoughts…";
+  if (hour < 10) return "What's on your mind this morning?";
+  if (hour < 12) return "What are you working on?";
+  if (hour < 14) return "Midday capture…";
+  if (hour < 17) return "What's happening?";
+  if (hour < 20) return "Evening reflection…";
+  return "End of day… what mattered?";
+}
+
 function FilterBar({
   filter,
   setFilter,
@@ -81,6 +92,7 @@ function Entry({
   onPromote,
   onMarkPivot,
   onFilter,
+  akhirahLens,
 }: {
   entry: ThroughlineEntry;
   goals: ThroughlineGoal[];
@@ -89,6 +101,7 @@ function Entry({
   onPromote: (id: string) => void;
   onMarkPivot: (id: string) => void;
   onFilter: (filter: ThroughlineContextFilter) => void;
+  akhirahLens?: boolean;
 }) {
   const goalObjects = (entry.goals ?? [])
     .map((id) => goals.find((goal) => goal.id === id))
@@ -98,8 +111,16 @@ function Entry({
     .filter((project): project is ThroughlineProject => Boolean(project));
   const tags = entry.tags ?? [];
 
+  const lensClass = akhirahLens
+    ? entry.priority === "dunya"
+      ? "akhirah-dim"
+      : entry.priority === "akhirah"
+        ? "akhirah-highlight"
+        : ""
+    : "";
+
   return (
-    <article className={`entry ${entry.starred ? "starred" : ""}${entry.archived ? " archived" : ""}`}>
+    <article className={`entry ${entry.starred ? "starred" : ""}${entry.archived ? " archived" : ""}${lensClass ? ` ${lensClass}` : ""}`}>
       <span className="timestamp">{formatTime(entry.created_at)}</span>
       <span className="dot" />
       {(entry.priority || entry.signal || goalObjects.length > 0 || projectObjects.length > 0 || tags.length > 0) && (
@@ -341,6 +362,7 @@ function Capture({
   }, [blockNoteView, editor, htmlValue, isCode, markdownValue, onAdd, priority, selectedGoals, selectedProjects, tags]);
 
   const BlockNoteRenderer = blockNoteView;
+  const timePlaceholder = getTimePlaceholder();
 
   return (
     <div
@@ -369,7 +391,7 @@ function Capture({
           ref={fallbackInputRef}
           className="capture-editor-fallback"
           aria-label="Capture editor"
-          placeholder="What's the throughline today?"
+          placeholder={timePlaceholder}
           value={markdownValue}
           onChange={(event) => setMarkdownValue(event.target.value)}
           onKeyDown={(event) => {
@@ -540,6 +562,7 @@ interface FeedViewProps {
   onToggleStar: (entryId: string) => void;
   onTogglePromote: (entryId: string) => void;
   onMarkPivot: (entryId: string) => void;
+  akhirahLens?: boolean;
 }
 
 export function FeedView({
@@ -559,6 +582,7 @@ export function FeedView({
   onToggleStar,
   onTogglePromote,
   onMarkPivot,
+  akhirahLens,
 }: FeedViewProps) {
   const trimmedGreetingName = greetingName?.trim();
   return (
@@ -616,6 +640,7 @@ export function FeedView({
                   onPromote={onTogglePromote}
                   onMarkPivot={onMarkPivot}
                   onFilter={onSetContextFilter}
+                  akhirahLens={akhirahLens}
                 />
               ),
             )}

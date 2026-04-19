@@ -2,19 +2,25 @@ import { buildMinimap } from "@/lib/minimap";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import type {
   CreateGoalPayload,
+  CreateCommitmentPayload,
   CreateEntryPayload,
   CreateProjectPayload,
   EntryPriority,
+  GoalStatus,
+  PatchCommitmentPayload,
   PatchEntryPayload,
   ThroughlineBootstrap,
   ThroughlineEntry,
   ThroughlineGoal,
+  ThroughlineProject,
   ThroughlineThreadsView,
   ThroughlineTimelineYear,
-  ThroughlineProject,
+  ThroughlineWeekCommitment,
   UpdateGoalPayload,
   UpdateProjectPayload,
 } from "@/lib/types";
+
+const BOOTSTRAP_ENTRY_LIMIT = 60;
 
 interface DbEntryRow {
   id: string;
@@ -44,6 +50,7 @@ interface DbGoalRow {
   active_from: string | null;
   active_to: string | null;
   order_index: number;
+  status?: string | null;
 }
 
 interface DbProjectRow {
@@ -56,6 +63,16 @@ interface DbProjectRow {
   active_from: string | null;
   active_to: string | null;
   order_index: number;
+  status?: string | null;
+}
+
+interface DbCommitmentRow {
+  id: string;
+  week_key: string;
+  text: string;
+  done: boolean;
+  order_index: number;
+  created_at: string;
 }
 
 function mapEntryRow(row: DbEntryRow): ThroughlineEntry {
@@ -85,6 +102,11 @@ function parsePriority(value: string | null | undefined): EntryPriority | undefi
   return undefined;
 }
 
+function parseGoalStatus(value: string | null | undefined): GoalStatus | undefined {
+  if (value === "active" || value === "paused" || value === "someday" || value === "archived") return value;
+  return undefined;
+}
+
 function isMissingPriorityColumnError(error: { message?: string; details?: string | null; hint?: string | null; code?: string } | null) {
   if (!error) return false;
   if (error.code === "42703" || error.code?.toLowerCase() === "pgrst204") return true;
@@ -101,6 +123,7 @@ function mapGoalRow(row: DbGoalRow): ThroughlineGoal {
     active_from: row.active_from ?? undefined,
     active_to: row.active_to ?? undefined,
     order_index: row.order_index,
+    status: parseGoalStatus(row.status) ?? "active",
   };
 }
 
@@ -115,6 +138,18 @@ function mapProjectRow(row: DbProjectRow): ThroughlineProject {
     active_from: row.active_from ?? undefined,
     active_to: row.active_to ?? undefined,
     order_index: row.order_index,
+    status: parseGoalStatus(row.status) ?? "active",
+  };
+}
+
+function mapCommitmentRow(row: DbCommitmentRow): ThroughlineWeekCommitment {
+  return {
+    id: row.id,
+    week_key: row.week_key,
+    text: row.text,
+    done: row.done,
+    order_index: row.order_index,
+    created_at: row.created_at,
   };
 }
 
@@ -173,33 +208,74 @@ async function listGoalsProjects() {
   };
 }
 
-async function listGoalsProjectsEntries() {
-  const supabase = getSupabaseAdmin();
-  const [{ goals, projects }, entriesRes] = await Promise.all([
-    listGoalsProjects(),
-    supabase.from("throughline_entries").select("*").order("created_at", { ascending: false }),
-  ]);
-
-  if (entriesRes.error) throw entriesRes.error;
-  return {
-    goals,
-    projects,
-    entries: (entriesRes.data ?? []).map(mapEntryRow),
-  };
+function currentWeekKey(): string {
+  const now = new Date();
+  const startOfYear = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+  const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+  const week = Math.ceil((dayOfYear + 1) / 7);
+  return `${now.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
 }
 
 export async function getBootstrapData(): Promise<ThroughlineBootstrap> {
-  const { goals, projects, entries } = await listGoalsProjectsEntries();
+  const supabase = getSupabaseAdmin();
+  const weekKey = currentWeekKey();
+
+  const [{ goals, projects }, entriesRes, countRes, profileRes, commitmentsRes] = await Promise.all([
+    listGoalsProjects(),
+    supabase
+      .from("throughline_entries")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(BOOTSTRAP_ENTRY_LIMIT),
+    supabase.from("throughline_entries").select("id", { count: "exact", head: true }),
+    supabase.from("throughline_profiles").select("*").limit(1).maybeSingle(),
+    supabase
+      .from("throughline_commitments")
+      .select("*")
+      .eq("week_key", weekKey)
+      .order("order_index", { ascending: true }),
+  ]);
+
+  if (entriesRes.error) throw entriesRes.error;
+
+  const entries = (entriesRes.data ?? []).map(mapEntryRow);
+  const totalCount = countRes.count ?? 0;
 
   return {
     goals,
     projects,
     entries,
     minimap: buildMinimap(entries),
+    profile: profileRes.data ?? null,
+    commitments: (commitmentsRes.data ?? []).map(mapCommitmentRow),
+    hasMoreEntries: totalCount > BOOTSTRAP_ENTRY_LIMIT,
   };
 }
 
-export async function createEntry(payload: CreateEntryPayload): Promise<ThroughlineEntry> {
+export async function listEntriesPage(cursor?: string): Promise<{ entries: ThroughlineEntry[]; hasMore: boolean }> {
+  const supabase = getSupabaseAdmin();
+  let query = supabase
+    .from("throughline_entries")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(BOOTSTRAP_ENTRY_LIMIT + 1);
+
+  if (cursor) {
+    query = query.lt("created_at", cursor);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const rows = data ?? [];
+  const hasMore = rows.length > BOOTSTRAP_ENTRY_LIMIT;
+  return {
+    entries: rows.slice(0, BOOTSTRAP_ENTRY_LIMIT).map(mapEntryRow),
+    hasMore,
+  };
+}
+
+export async function createEntry(payload: CreateEntryPayload, userId?: string): Promise<ThroughlineEntry> {
   const tags = payload.tags ?? [];
   const record: ThroughlineEntry = {
     id: id("e"),
@@ -239,9 +315,8 @@ export async function createEntry(payload: CreateEntryPayload): Promise<Throughl
     starred: false,
     archived: false,
   };
-  if (record.priority) {
-    insertPayload.priority = record.priority;
-  }
+  if (record.priority) insertPayload.priority = record.priority;
+  if (userId) insertPayload.user_id = userId;
 
   let { data, error } = await supabase
     .from("throughline_entries")
@@ -258,10 +333,7 @@ export async function createEntry(payload: CreateEntryPayload): Promise<Throughl
   return mapEntryRow(data as DbEntryRow);
 }
 
-export async function patchEntry(
-  entryId: string,
-  patch: PatchEntryPayload,
-): Promise<ThroughlineEntry | null> {
+export async function patchEntry(entryId: string, patch: PatchEntryPayload): Promise<ThroughlineEntry | null> {
   const updatePayload: Record<string, boolean | string | null> = {};
   if (typeof patch.starred === "boolean") updatePayload.starred = patch.starred;
   if (typeof patch.archived === "boolean") updatePayload.archived = patch.archived;
@@ -275,9 +347,7 @@ export async function patchEntry(
     updatePayload.priority = patch.priority ?? null;
   }
 
-  if (Object.keys(updatePayload).length === 0) {
-    return null;
-  }
+  if (Object.keys(updatePayload).length === 0) return null;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -291,20 +361,24 @@ export async function patchEntry(
   return mapEntryRow(data as DbEntryRow);
 }
 
-export async function createGoal(payload: CreateGoalPayload): Promise<ThroughlineGoal> {
+export async function createGoal(payload: CreateGoalPayload, userId?: string): Promise<ThroughlineGoal> {
   const orderIndex = payload.order_index ?? (await nextOrderIndex("throughline_goals"));
   const supabase = getSupabaseAdmin();
+  const insertPayload: Record<string, unknown> = {
+    id: id("g"),
+    name: payload.name,
+    color: payload.color ?? null,
+    target_date: payload.target_date ?? null,
+    active_from: payload.active_from ?? null,
+    active_to: payload.active_to ?? null,
+    order_index: orderIndex,
+    status: payload.status ?? "active",
+  };
+  if (userId) insertPayload.user_id = userId;
+
   const { data, error } = await supabase
     .from("throughline_goals")
-    .insert({
-      id: id("g"),
-      name: payload.name,
-      color: payload.color ?? null,
-      target_date: payload.target_date ?? null,
-      active_from: payload.active_from ?? null,
-      active_to: payload.active_to ?? null,
-      order_index: orderIndex,
-    })
+    .insert(insertPayload)
     .select("*")
     .single();
 
@@ -320,6 +394,7 @@ export async function updateGoal(goalId: string, payload: UpdateGoalPayload): Pr
   if (typeof payload.active_from === "string" || payload.active_from === null) updatePayload.active_from = payload.active_from ?? null;
   if (typeof payload.active_to === "string" || payload.active_to === null) updatePayload.active_to = payload.active_to ?? null;
   if (typeof payload.order_index === "number") updatePayload.order_index = payload.order_index;
+  if (payload.status) updatePayload.status = payload.status;
   if (Object.keys(updatePayload).length === 0) return null;
 
   const supabase = getSupabaseAdmin();
@@ -334,22 +409,26 @@ export async function updateGoal(goalId: string, payload: UpdateGoalPayload): Pr
   return mapGoalRow(data as DbGoalRow);
 }
 
-export async function createProject(payload: CreateProjectPayload): Promise<ThroughlineProject> {
+export async function createProject(payload: CreateProjectPayload, userId?: string): Promise<ThroughlineProject> {
   const orderIndex = payload.order_index ?? (await nextOrderIndex("throughline_projects"));
   const supabase = getSupabaseAdmin();
+  const insertPayload: Record<string, unknown> = {
+    id: id("p"),
+    name: payload.name,
+    goal_id: payload.goal_id ?? null,
+    color: payload.color ?? null,
+    tag: payload.tag ?? null,
+    target_date: payload.target_date ?? null,
+    active_from: payload.active_from ?? null,
+    active_to: payload.active_to ?? null,
+    order_index: orderIndex,
+    status: payload.status ?? "active",
+  };
+  if (userId) insertPayload.user_id = userId;
+
   const { data, error } = await supabase
     .from("throughline_projects")
-    .insert({
-      id: id("p"),
-      name: payload.name,
-      goal_id: payload.goal_id ?? null,
-      color: payload.color ?? null,
-      tag: payload.tag ?? null,
-      target_date: payload.target_date ?? null,
-      active_from: payload.active_from ?? null,
-      active_to: payload.active_to ?? null,
-      order_index: orderIndex,
-    })
+    .insert(insertPayload)
     .select("*")
     .single();
 
@@ -367,6 +446,7 @@ export async function updateProject(projectId: string, payload: UpdateProjectPay
   if (typeof payload.active_from === "string" || payload.active_from === null) updatePayload.active_from = payload.active_from ?? null;
   if (typeof payload.active_to === "string" || payload.active_to === null) updatePayload.active_to = payload.active_to ?? null;
   if (typeof payload.order_index === "number") updatePayload.order_index = payload.order_index;
+  if (payload.status) updatePayload.status = payload.status;
   if (Object.keys(updatePayload).length === 0) return null;
 
   const supabase = getSupabaseAdmin();
@@ -379,6 +459,80 @@ export async function updateProject(projectId: string, payload: UpdateProjectPay
 
   if (error) throw error;
   return mapProjectRow(data as DbProjectRow);
+}
+
+export async function createCommitment(payload: CreateCommitmentPayload, userId?: string): Promise<ThroughlineWeekCommitment> {
+  const supabase = getSupabaseAdmin();
+  const { data: existing } = await supabase
+    .from("throughline_commitments")
+    .select("order_index")
+    .eq("week_key", payload.week_key)
+    .order("order_index", { ascending: false })
+    .limit(1);
+
+  const nextIndex = ((existing?.[0]?.order_index as number | undefined) ?? -1) + 1;
+  const insertPayload: Record<string, unknown> = {
+    id: id("c"),
+    week_key: payload.week_key,
+    text: payload.text,
+    done: false,
+    order_index: payload.order_index ?? nextIndex,
+  };
+  if (userId) insertPayload.user_id = userId;
+
+  const { data, error } = await supabase
+    .from("throughline_commitments")
+    .insert(insertPayload)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapCommitmentRow(data as DbCommitmentRow);
+}
+
+export async function patchCommitment(commitmentId: string, patch: PatchCommitmentPayload): Promise<ThroughlineWeekCommitment | null> {
+  const updatePayload: Record<string, string | boolean | number> = {};
+  if (typeof patch.text === "string") updatePayload.text = patch.text;
+  if (typeof patch.done === "boolean") updatePayload.done = patch.done;
+  if (typeof patch.order_index === "number") updatePayload.order_index = patch.order_index;
+  if (Object.keys(updatePayload).length === 0) return null;
+
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("throughline_commitments")
+    .update(updatePayload)
+    .eq("id", commitmentId)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return mapCommitmentRow(data as DbCommitmentRow);
+}
+
+export async function deleteCommitment(commitmentId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from("throughline_commitments").delete().eq("id", commitmentId);
+  if (error) throw error;
+}
+
+export async function getCommitmentsForWeek(weekKey: string): Promise<ThroughlineWeekCommitment[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("throughline_commitments")
+    .select("*")
+    .eq("week_key", weekKey)
+    .order("order_index", { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(mapCommitmentRow);
+}
+
+export async function syncProfileTweaks(userId: string, tweaks: Record<string, unknown>): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("throughline_profiles")
+    .update({ tweaks, updated_at: new Date().toISOString() })
+    .eq("id", userId);
+  if (error) throw error;
 }
 
 export async function getThreadsView(rawMonths = 6): Promise<ThroughlineThreadsView> {
@@ -493,9 +647,13 @@ export async function getThreadsView(rawMonths = 6): Promise<ThroughlineThreadsV
     }
   }
 
-  const orderedRows = goalRows
-    .sort((a, b) => a.order_index - b.order_index)
-    .flatMap((goal) => [goal, ...(projectsByGoal.get(goal.id) ?? [])]);
+  const orderedRows = goals
+    .sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+    .flatMap((goal) => [
+      goalRows.find((r) => r.id === goal.id)!,
+      ...(projectsByGoal.get(goal.id) ?? []),
+    ])
+    .filter(Boolean);
   orderedRows.push(...standaloneProjects);
 
   return {
@@ -528,14 +686,7 @@ export async function getTimelineView(rawYear: number): Promise<ThroughlineTimel
   const weeks = Array.from({ length: 52 }, (_, index) => {
     const start = new Date(startOfYear.getTime() + index * msWeek);
     const end = new Date(Math.min(start.getTime() + msWeek - 1, endOfYear.getTime()));
-    return {
-      week: index + 1,
-      start: start.toISOString(),
-      end: end.toISOString(),
-      captures: 0,
-      signals: 0,
-      pivots: 0,
-    };
+    return { week: index + 1, start: start.toISOString(), end: end.toISOString(), captures: 0, signals: 0, pivots: 0 };
   });
 
   for (const entry of entries) {
@@ -626,11 +777,5 @@ export async function getTimelineView(rawYear: number): Promise<ThroughlineTimel
       ? Math.min(52, Math.max(1, Math.floor((now.getTime() - startOfYear.getTime()) / msWeek) + 1))
       : 0;
 
-  return {
-    year,
-    nowWeek,
-    weeks,
-    pivots,
-    ribbons,
-  };
+  return { year, nowWeek, weeks, pivots, ribbons };
 }

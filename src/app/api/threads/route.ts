@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { getThreadsView } from "@/lib/throughline-service";
+import { getAuthUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
   try {
     const url = new URL(request.url);
     const monthsParam = Number(url.searchParams.get("months") ?? "6");
