@@ -21,7 +21,7 @@ import type {
 } from "@/lib/types";
 import { BigLineBar, Masthead, Minimap, Sidebar, TweaksPanel } from "@/features/throughline/chrome";
 import { FeedView } from "@/features/throughline/feed";
-import { applyTweaks, formatDay, Icon } from "@/features/throughline/shared";
+import { applyTweaks, formatDay, getEntryPlainText, Icon } from "@/features/throughline/shared";
 import { ThreadsView } from "@/features/throughline/threads-view";
 import { TimelineView } from "@/features/throughline/timeline-view";
 import { WeeklyReview } from "@/features/throughline/weekly-review";
@@ -311,7 +311,7 @@ export function ThroughlineHomePage() {
       if (!current) return;
 
       const nextPivot = !Boolean(current.isPivot);
-      const defaultLabel = current.pivotLabel || current.content || "Pivot";
+      const defaultLabel = current.pivotLabel || getEntryPlainText(current.content) || "Pivot";
       const defaultSlot =
         current.slotKind || (current.projects && current.projects.length > 0 ? "project" : current.goals && current.goals.length > 0 ? "goal" : "capture");
       const optimistic = {
@@ -434,7 +434,7 @@ export function ThroughlineHomePage() {
       });
     }
     if (filter === "starred") list = list.filter((entry) => entry.starred && !entry.isPivot);
-    if (filter === "links") list = list.filter((entry) => entry.link || /https?:\/\//.test(entry.content));
+    if (filter === "links") list = list.filter((entry) => entry.link || /https?:\/\//.test(getEntryPlainText(entry.content)));
     if (filter === "code") list = list.filter((entry) => entry.isCode);
     return list;
   }, [entries, filter, contextFilter]);

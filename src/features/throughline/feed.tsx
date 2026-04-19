@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ComponentType, type KeyboardEvent as ReactKeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   CreateEntryPayload,
   EntryPriority,
@@ -9,7 +9,15 @@ import type {
   ThroughlineGoal,
   ThroughlineProject,
 } from "@/lib/types";
-import { CodeBlock, extractTags, formatTime, Icon, renderContent } from "@/features/throughline/shared";
+import {
+  CodeBlock,
+  encodeBlockNoteContent,
+  extractTags,
+  formatTime,
+  getEntryPlainText,
+  Icon,
+  renderContent,
+} from "@/features/throughline/shared";
 
 function normalizeHttpUrl(raw: string) {
   const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
@@ -157,7 +165,7 @@ function Entry({
 
 function PivotMarker({ pivot }: { pivot: ThroughlineEntry }) {
   const hasTransition = Boolean(pivot.from && pivot.to);
-  const label = pivot.pivotLabel || pivot.to || pivot.content || "Pivot";
+  const label = pivot.pivotLabel || pivot.to || getEntryPlainText(pivot.content) || "Pivot";
 
   return (
     <div className="pivot">
@@ -178,6 +186,24 @@ function PivotMarker({ pivot }: { pivot: ThroughlineEntry }) {
   );
 }
 
+interface BlockNoteRuntimeEditor {
+  document: unknown[];
+  focus: () => void;
+  insertInlineContent: (content: string) => void;
+  replaceBlocks: (blocksToRemove: unknown[], blocksToInsert: Array<{ type: string; content?: string }>) => void;
+  blocksToMarkdownLossy: (blocks?: unknown[]) => string;
+  blocksToHTMLLossy: (blocks?: unknown[]) => string;
+  tryParseMarkdownToBlocks: (markdown: string) => unknown[];
+}
+
+interface BlockNoteRuntimeViewProps {
+  editor: BlockNoteRuntimeEditor;
+  className?: string;
+  "aria-label"?: string;
+  onChange?: () => void;
+  onKeyDownCapture?: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
+}
+
 function Capture({
   goals,
   projects,
@@ -187,7 +213,10 @@ function Capture({
   projects: ThroughlineProject[];
   onAdd: (payload: CreateEntryPayload) => void;
 }) {
-  const [value, setValue] = useState("");
+  const [blockNoteView, setBlockNoteView] = useState<ComponentType<BlockNoteRuntimeViewProps> | null>(null);
+  const [editor, setEditor] = useState<BlockNoteRuntimeEditor | null>(null);
+  const [markdownValue, setMarkdownValue] = useState("");
+  const [htmlValue, setHtmlValue] = useState("");
   const [focused, setFocused] = useState(false);
   const [picker, setPicker] = useState(false);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
@@ -195,19 +224,60 @@ function Capture({
   const [isCode, setIsCode] = useState(false);
   const [priority, setPriority] = useState<EntryPriority | null>(null);
 
-  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const pickerRef = useRef<HTMLDivElement | null>(null);
+  const fallbackInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const markdownRef = useRef(markdownValue);
+
+  useEffect(() => {
+    markdownRef.current = markdownValue;
+  }, [markdownValue]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadEditor = async () => {
+      try {
+        const [{ BlockNoteView }, { BlockNoteEditor }] = await Promise.all([import("@blocknote/mantine"), import("@blocknote/core")]);
+        if (cancelled) return;
+        const nextEditor = BlockNoteEditor.create() as unknown as BlockNoteRuntimeEditor;
+        const preloadedMarkdown = markdownRef.current.trim();
+        if (preloadedMarkdown) {
+          const blocks = nextEditor.tryParseMarkdownToBlocks(preloadedMarkdown);
+          nextEditor.replaceBlocks(nextEditor.document, blocks as Array<{ type: string; content?: string }>);
+        }
+        setBlockNoteView(() => BlockNoteView as unknown as ComponentType<BlockNoteRuntimeViewProps>);
+        setEditor(nextEditor);
+      } catch {
+        // Keep textarea fallback available when editor runtime fails to load.
+      }
+    };
+    void loadEditor();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const syncEditorDraft = useCallback(() => {
+    if (!editor) return;
+    const markdown = editor.blocksToMarkdownLossy(editor.document).trim();
+    const html = editor.blocksToHTMLLossy(editor.document);
+    setMarkdownValue(markdown);
+    setHtmlValue(html);
+  }, [editor]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        textAreaRef.current?.focus();
+        if (editor) {
+          editor.focus();
+          return;
+        }
+        fallbackInputRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [editor]);
 
   useEffect(() => {
     if (!picker) return;
@@ -220,50 +290,57 @@ function Capture({
     return () => document.removeEventListener("mousedown", closeOutside);
   }, [picker]);
 
-  useEffect(() => {
-    if (!textAreaRef.current) return;
-    textAreaRef.current.style.height = "auto";
-    textAreaRef.current.style.height = `${Math.min(textAreaRef.current.scrollHeight, 360)}px`;
-  }, [value]);
-
-  const tags = useMemo(() => extractTags(value), [value]);
+  const tags = useMemo(() => extractTags(markdownValue), [markdownValue]);
   const selectedCount = selectedGoals.length + selectedProjects.length;
-  const link = useMemo(() => firstLinkFromText(value), [value]);
+  const link = useMemo(() => firstLinkFromText(markdownValue), [markdownValue]);
 
   const insertLink = useCallback(() => {
     const raw = window.prompt("Paste a URL to add");
     if (!raw) return;
     const normalized = normalizeHttpUrl(raw.trim());
     if (!normalized) return;
-    setValue((state) => `${state}${state && !state.endsWith(" ") && !state.endsWith("\n") ? " " : ""}${normalized}`);
-    textAreaRef.current?.focus();
-  }, []);
+    const spacer = markdownValue && !markdownValue.endsWith(" ") && !markdownValue.endsWith("\n") ? " " : "";
+    if (editor) {
+      editor.insertInlineContent(`${spacer}${normalized}`);
+      editor.focus();
+      syncEditorDraft();
+      return;
+    }
+    setMarkdownValue((state) => `${state}${spacer}${normalized}`);
+  }, [editor, markdownValue, syncEditorDraft]);
 
   const submit = useCallback(() => {
-    if (!value.trim()) return;
+    const markdown = markdownValue.trim();
+    if (!markdown) return;
+
+    const richContent = encodeBlockNoteContent({
+      html: htmlValue,
+      markdown,
+    });
+    const canSaveRich = Boolean(editor && blockNoteView);
+
     onAdd({
-      content: value.trim(),
+      content: isCode || !canSaveRich ? markdown : richContent || markdown,
       goals: selectedGoals,
       projects: selectedProjects,
       tags,
       isCode,
-      link: firstLinkFromText(value.trim()),
+      link: firstLinkFromText(markdown),
       priority: priority ?? undefined,
     });
-    setValue("");
+    if (editor) {
+      editor.replaceBlocks(editor.document, [{ type: "paragraph", content: "" }]);
+      editor.focus();
+    }
+    setMarkdownValue("");
+    setHtmlValue("");
     setSelectedGoals([]);
     setSelectedProjects([]);
     setIsCode(false);
     setPriority(null);
-  }, [isCode, onAdd, priority, selectedGoals, selectedProjects, tags, value]);
+  }, [blockNoteView, editor, htmlValue, isCode, markdownValue, onAdd, priority, selectedGoals, selectedProjects, tags]);
 
-  const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      submit();
-    }
-    if (event.key === "Escape") setPicker(false);
-  };
+  const BlockNoteRenderer = blockNoteView;
 
   return (
     <div
@@ -273,15 +350,37 @@ function Capture({
         if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
       }}
     >
-      <textarea
-        ref={textAreaRef}
-        className="capture-textarea"
-        rows={2}
-        placeholder="What's the throughline today?"
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        onKeyDown={onKeyDown}
-      />
+      {BlockNoteRenderer && editor ? (
+        <BlockNoteRenderer
+          editor={editor}
+          className="capture-editor"
+          aria-label="Capture editor"
+          onChange={syncEditorDraft}
+          onKeyDownCapture={(event: ReactKeyboardEvent<HTMLDivElement>) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+              event.preventDefault();
+              submit();
+            }
+            if (event.key === "Escape") setPicker(false);
+          }}
+        />
+      ) : (
+        <textarea
+          ref={fallbackInputRef}
+          className="capture-editor-fallback"
+          aria-label="Capture editor"
+          placeholder="What's the throughline today?"
+          value={markdownValue}
+          onChange={(event) => setMarkdownValue(event.target.value)}
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+              event.preventDefault();
+              submit();
+            }
+            if (event.key === "Escape") setPicker(false);
+          }}
+        />
+      )}
 
       <div className="capture-intention">
         <div className="capture-intention-label">Intention check: is this for Dunya (Immediate) or Akhirah (Legacy)?</div>
@@ -358,8 +457,14 @@ function Capture({
             title="Insert tag"
             type="button"
             onClick={() => {
-              setValue((state) => `${state}${state.endsWith(" ") || !state ? "#" : " #"}`);
-              textAreaRef.current?.focus();
+              const spacer = markdownValue.endsWith(" ") || !markdownValue ? "" : " ";
+              if (editor) {
+                editor.insertInlineContent(`${spacer}#`);
+                editor.focus();
+                syncEditorDraft();
+                return;
+              }
+              setMarkdownValue((state) => `${state}${spacer}#`);
             }}
           >
             <Icon.Hash />
@@ -407,9 +512,9 @@ function Capture({
 
         <div className="tool-right">
           <span className="hint">
-            <span className="kbd">⌘K</span> to focus - <span className="kbd">⏎</span> to save
+            <span className="kbd">⌘K</span> to focus - <span className="kbd">⌘↵</span> to save
           </span>
-          <button className="save-btn" disabled={!value.trim()} onClick={submit} type="button">
+          <button className="save-btn" disabled={!markdownValue.trim()} onClick={submit} type="button">
             Save
           </button>
         </div>

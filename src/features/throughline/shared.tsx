@@ -50,6 +50,13 @@ const FONTS = {
   },
 } as const;
 
+const BLOCKNOTE_CONTENT_PREFIX = "blocknote:v1:";
+
+interface BlockNoteSerializedContent {
+  html: string;
+  markdown: string;
+}
+
 export const Icon = {
   Hash: (props: { size?: number }) => (
     <svg viewBox="0 0 16 16" width={props.size ?? 14} height={props.size ?? 14} fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -145,7 +152,71 @@ export function extractTags(value: string) {
   return [...new Set(matches.map((part) => part.trim().slice(1)))];
 }
 
+export function encodeBlockNoteContent(payload: BlockNoteSerializedContent) {
+  const html = payload.html.trim();
+  const markdown = payload.markdown.trim();
+  if (!html && !markdown) return "";
+  return `${BLOCKNOTE_CONTENT_PREFIX}${JSON.stringify({ html, markdown })}`;
+}
+
+export function parseBlockNoteContent(value: string): BlockNoteSerializedContent | null {
+  if (!value.startsWith(BLOCKNOTE_CONTENT_PREFIX)) return null;
+  const raw = value.slice(BLOCKNOTE_CONTENT_PREFIX.length);
+  if (!raw.trim()) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<BlockNoteSerializedContent>;
+    if (typeof parsed.html !== "string" || typeof parsed.markdown !== "string") return null;
+    return {
+      html: parsed.html,
+      markdown: parsed.markdown,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function getEntryPlainText(content: string) {
+  const rich = parseBlockNoteContent(content);
+  return rich ? rich.markdown : content;
+}
+
+function sanitizeRichHtml(html: string) {
+  if (!html.trim()) return "";
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
+  }
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  doc.querySelectorAll("script,style,iframe,object,embed,link,meta").forEach((node) => node.remove());
+
+  doc.querySelectorAll("*").forEach((element) => {
+    for (const attribute of [...element.attributes]) {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value.trim().toLowerCase();
+      if (name.startsWith("on")) {
+        element.removeAttribute(attribute.name);
+        continue;
+      }
+      if ((name === "href" || name === "src") && value.startsWith("javascript:")) {
+        element.removeAttribute(attribute.name);
+        continue;
+      }
+      if (name === "style") {
+        element.removeAttribute(attribute.name);
+      }
+    }
+  });
+
+  return doc.body.innerHTML;
+}
+
 export function renderContent(text: string) {
+  const rich = parseBlockNoteContent(text);
+  if (rich) {
+    return <div className="rich-content" dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(rich.html) }} />;
+  }
+
   const parts: ReactNode[] = [];
   const regex = /(https?:\/\/[^\s]+)|(#[a-z0-9_-]+)/gi;
   let last = 0;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CodeBlock, isEntrySignal, renderContent } from "@/features/throughline/shared";
+import { CodeBlock, getEntryPlainText, isEntrySignal, renderContent } from "@/features/throughline/shared";
 import type { ThroughlineEntry, ThroughlineThreadsView } from "@/lib/types";
 
 function formatDate(value?: string) {
@@ -165,7 +165,7 @@ export function ThreadsView({ data, isLoading, entries }: ThreadsViewProps) {
               {row.latest_signal ? (
                 <div className="preview">
                   <span className="when">{formatDate(row.latest_signal.created_at)}</span>
-                  <span>{row.latest_signal.content}</span>
+                  <span>{getEntryPlainText(row.latest_signal.content)}</span>
                 </div>
               ) : null}
             </div>
@@ -213,7 +213,7 @@ export function ThreadsView({ data, isLoading, entries }: ThreadsViewProps) {
                     aria-label={`Open signal from ${formatDayTime(entry.created_at)}`}
                   >
                     <span className="when">{formatDayTime(entry.created_at)}</span>
-                    <span className={`txt ${entry.isPivot ? "pivot" : ""}`}>{entry.content || entry.pivotLabel || entry.to || "Pivot"}</span>
+                    <div className={`txt ${entry.isPivot ? "pivot" : ""}`}>{getEntryPlainText(entry.content) || entry.pivotLabel || entry.to || "Pivot"}</div>
                   </button>
                 ))}
               </div>

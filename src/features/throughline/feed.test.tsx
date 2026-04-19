@@ -3,6 +3,66 @@ import { describe, expect, it, vi } from "vitest";
 import { FeedView } from "@/features/throughline/feed";
 import type { CreateEntryPayload, FeedFilter, ThroughlineEntry, ThroughlineGoal, ThroughlineProject } from "@/lib/types";
 
+function createFakeEditor() {
+  let value = "";
+  return {
+    get document() {
+      return [{ id: "mock-block", type: "paragraph", content: value }];
+    },
+    blocksToMarkdownLossy(_blocks?: unknown) {
+      return value;
+    },
+    blocksToHTMLLossy(_blocks?: unknown) {
+      return value ? `<p>${value}</p>` : "<p></p>";
+    },
+    insertInlineContent(content: string) {
+      value += content;
+    },
+    replaceBlocks() {
+      value = "";
+    },
+    focus() {
+      // no-op for tests
+    },
+    __setValue(next: string) {
+      value = next;
+    },
+  };
+}
+
+vi.mock("@blocknote/core", () => ({
+  BlockNoteEditor: {
+    create: () => createFakeEditor(),
+  },
+}));
+
+vi.mock("@blocknote/mantine", () => ({
+  BlockNoteView: ({
+    editor,
+    onChange,
+    onKeyDownCapture,
+    "aria-label": ariaLabel,
+    className,
+  }: {
+    editor: ReturnType<typeof createFakeEditor>;
+    onChange?: () => void;
+    onKeyDownCapture?: (event: unknown) => void;
+    "aria-label"?: string;
+    className?: string;
+  }) => (
+    <textarea
+      aria-label={ariaLabel ?? "Capture editor"}
+      className={className}
+      value={editor.blocksToMarkdownLossy(editor.document)}
+      onChange={(event) => {
+        editor.__setValue(event.target.value);
+        onChange?.();
+      }}
+      onKeyDown={onKeyDownCapture as any}
+    />
+  ),
+}));
+
 function renderFeed(overrides?: {
   entries?: ThroughlineEntry[];
   groupedEntries?: Array<{ day: string; items: ThroughlineEntry[] }>;
@@ -73,8 +133,8 @@ describe("FeedView interactions", () => {
     const onAddEntry = vi.fn();
     renderFeed({ entries: [], groupedEntries: [], onAddEntry });
 
-    const textarea = screen.getByPlaceholderText("What's the throughline today?");
-    fireEvent.change(textarea, { target: { value: "const answer = 42;" } });
+    const editor = screen.getByLabelText("Capture editor");
+    fireEvent.change(editor, { target: { value: "const answer = 42;" } });
     fireEvent.click(screen.getByTitle("Code block"));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
@@ -92,8 +152,8 @@ describe("FeedView interactions", () => {
     renderFeed({ entries: [], groupedEntries: [], onAddEntry });
 
     fireEvent.click(screen.getByTitle("Insert link"));
-    const textarea = screen.getByPlaceholderText("What's the throughline today?") as HTMLTextAreaElement;
-    expect(textarea.value).toContain("https://example.com/docs");
+    const editor = screen.getByLabelText("Capture editor") as HTMLTextAreaElement;
+    expect(editor.value).toContain("https://example.com/docs");
 
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(onAddEntry).toHaveBeenCalledWith(

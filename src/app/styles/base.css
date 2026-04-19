@@ -454,12 +454,18 @@ a {
   box-shadow: 0 1px 0 var(--rule), 0 24px 60px -28px rgba(20, 16, 10, 0.15);
 }
 
-.capture-textarea {
-  width: 100%;
-  resize: none;
-  background: transparent;
+.capture-editor {
+  min-height: 60px;
+}
+
+.capture-editor .bn-container {
   border: none;
-  outline: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.capture-editor .bn-editor {
+  padding: 0;
   font-family: var(--f-display);
   font-weight: 400;
   font-size: 22px;
@@ -467,12 +473,25 @@ a {
   color: var(--ink);
   letter-spacing: -0.01em;
   min-height: 60px;
-  padding: 0;
 }
 
-.capture-textarea::placeholder {
-  color: var(--ink-4);
-  font-style: italic;
+.capture-editor .bn-editor p {
+  margin: 0;
+}
+
+.capture-editor-fallback {
+  width: 100%;
+  resize: vertical;
+  min-height: 60px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--f-display);
+  font-size: 22px;
+  line-height: 1.4;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  padding: 0;
 }
 
 .capture-intention {

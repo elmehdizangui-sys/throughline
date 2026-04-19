@@ -187,9 +187,13 @@ export function TimelineView({ data, isLoading, entries, onYearChange }: Timelin
               {selectedSignals.map((entry) => (
                 <div key={entry.id} className="signal-row static">
                   <span className="when">{formatDayTime(entry.created_at)}</span>
-                  <span className={`txt ${entry.isPivot ? "pivot" : ""}`}>
-                    {entry.isCode ? <CodeBlock content={entry.content} /> : renderContent(entry.content || entry.pivotLabel || entry.to || "Pivot")}
-                  </span>
+                  <div className={`txt ${entry.isPivot ? "pivot" : ""}`}>
+                    {entry.isCode ? (
+                      <CodeBlock content={entry.content} />
+                    ) : (
+                      renderContent(entry.content || entry.pivotLabel || entry.to || "Pivot")
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
