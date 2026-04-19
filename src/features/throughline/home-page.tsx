@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEFAULT_TWEAKS } from "@/lib/seed";
 import { buildMinimap } from "@/lib/minimap";
+import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type {
   CreateEntryPayload,
   FeedFilter,
@@ -61,6 +62,7 @@ export function ThroughlineHomePage() {
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerKind, setComposerKind] = useState<"goal" | "project">("goal");
+  const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [composerPreselectedGoalId, setComposerPreselectedGoalId] = useState<string | null>(null);
@@ -87,6 +89,30 @@ export function ThroughlineHomePage() {
     window.addEventListener("message", onMessage);
     window.parent?.postMessage({ type: "__edit_mode_available" }, "*");
     return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = getSupabaseBrowserClient();
+
+    void supabase.auth.getUser().then(({ data }) => {
+      if (!cancelled) {
+        setUserEmail(data.user?.email ?? undefined);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!cancelled) {
+        setUserEmail(session?.user?.email ?? undefined);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -420,6 +446,15 @@ export function ThroughlineHomePage() {
 
   const minimap = useMemo<MinimapWeek[]>(() => buildMinimap(entries), [entries]);
 
+  const signOut = useCallback(async () => {
+    try {
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
+    } finally {
+      window.location.href = "/login";
+    }
+  }, []);
+
   return (
     <>
       <Sidebar
@@ -431,7 +466,7 @@ export function ThroughlineHomePage() {
         onEdit={(kind, id) => openEditComposer(kind, id)}
         onStartReview={() => setReviewOpen(true)}
       />
-      <Masthead onOpenTweaks={() => setTweaksOpen(true)} onView={setView} view={view} />
+      <Masthead onOpenTweaks={() => setTweaksOpen(true)} onView={setView} view={view} userEmail={userEmail} onSignOut={signOut} />
       <BigLineBar
         goals={goals}
         projects={projects}

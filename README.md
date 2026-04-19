@@ -26,7 +26,7 @@ Throughline is a design-accurate implementation of the provided `project-design/
 ## Tech stack
 
 - Next.js (App Router) + TypeScript
-- Supabase Postgres (configured via publishable key)
+- Supabase Auth + Postgres
 - CSS ported from the source design with near 1:1 visual fidelity
 
 ## Setup
@@ -46,7 +46,10 @@ cp .env.example .env.local
 3. Fill `.env.local`:
 
 - `SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `APP_OWNER_EMAIL` (optional)
 
 4. Create database schema in Supabase SQL Editor:
 
@@ -78,3 +81,19 @@ Open [http://localhost:3000](http://localhost:3000).
 - `PATCH /api/projects/:id` - update a project
 - `GET /api/threads?months=6` - aggregated spine data for Threads view
 - `GET /api/timeline?year=2026` - aggregated year-line data for Timeline view
+
+## Production security baseline
+
+- All routes are protected with Supabase Auth session checks in middleware.
+- API requests are rate-limited in middleware to reduce brute-force and abuse attempts.
+- Security headers are set globally (CSP, frame protection, MIME sniffing protection, referrer policy, permissions policy, HSTS in production).
+- Server-side Supabase data access uses `SUPABASE_SERVICE_ROLE_KEY`.
+- Optional single-owner lock is available through `APP_OWNER_EMAIL`.
+
+For production deployment:
+
+1. Configure Supabase Auth (Email/Password provider) in your project settings.
+2. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in hosting secrets.
+3. Optionally set `APP_OWNER_EMAIL` to restrict access to one account.
+4. Keep `.env.local` out of git (already covered by `.gitignore`).
+5. Deploy only over HTTPS.

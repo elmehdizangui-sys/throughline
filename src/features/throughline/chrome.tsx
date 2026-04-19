@@ -15,11 +15,16 @@ export function Masthead({
   onOpenTweaks,
   onView,
   view,
+  userEmail,
+  onSignOut,
 }: {
   onOpenTweaks: () => void;
   onView: (next: MainView) => void;
   view: MainView;
+  userEmail?: string;
+  onSignOut: () => void;
 }) {
+  const initials = (userEmail ?? "U").slice(0, 2).toUpperCase();
   return (
     <header className="masthead">
       <div className="masthead-inner">
@@ -72,9 +77,9 @@ export function Masthead({
             <span style={{ marginLeft: 4 }}>Tweaks</span>
           </a>
         </nav>
-        <button className="me" type="button">
-          <span>alex@throughline.co</span>
-          <div className="avatar">AV</div>
+        <button className="me" type="button" onClick={onSignOut} title="Sign out">
+          <span>{userEmail ?? "Sign out"}</span>
+          <div className="avatar">{initials}</div>
         </button>
       </div>
     </header>

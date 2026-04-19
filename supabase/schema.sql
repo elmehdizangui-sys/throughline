@@ -84,3 +84,8 @@ create index if not exists throughline_entries_archived_idx on throughline_entri
 create index if not exists throughline_entries_signal_idx on throughline_entries (signal);
 create index if not exists throughline_entries_is_pivot_idx on throughline_entries (is_pivot);
 create index if not exists throughline_projects_goal_order_idx on throughline_projects (goal_id, order_index);
+
+-- Security hardening: API traffic should go through server routes only.
+alter table throughline_goals enable row level security;
+alter table throughline_projects enable row level security;
+alter table throughline_entries enable row level security;

@@ -16,6 +16,7 @@
   "license": "ISC",
   "description": "Throughline - dynamic journaling app with Supabase",
   "dependencies": {
+    "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.3",
     "next": "^16.2.4",
     "react": "^19.2.5",
