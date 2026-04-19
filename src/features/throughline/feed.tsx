@@ -154,7 +154,7 @@ function Entry({
         {entry.isCode ? <CodeBlock content={entry.content} /> : renderContent(entry.content)}
         {entry.link ? (
           <div className="link-preview">
-            <div className="thumb">link.preview</div>
+            <div className="thumb" aria-hidden="true">link.preview</div>
             <div className="txt">
               <div className="h">{entry.link.title}</div>
               {entry.link.desc ? <div className="d">{entry.link.desc}</div> : null}
@@ -460,12 +460,12 @@ function Capture({
 
       <div className="capture-toolbar">
         <div className="tool-left" ref={pickerRef} style={{ position: "relative" }}>
-          <button className="tool-btn" title="Link to goal / project" onClick={() => setPicker((state) => !state)} type="button">
+          <button className="tool-btn" title="Link to goal / project" aria-label="Link to goal / project" onClick={() => setPicker((state) => !state)} type="button">
             <Icon.Paperclip />
           </button>
           <button
             className={`tool-btn ${isCode ? "active" : ""}`}
-            title="Code block"
+            title="Code block" aria-label="Toggle code mode"
             onClick={() => setIsCode((state) => !state)}
             type="button"
           >
