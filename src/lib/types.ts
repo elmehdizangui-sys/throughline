@@ -38,6 +38,15 @@ export interface ThroughlineProject {
   order_index?: number;
 }
 
+export interface ThroughlineProfile {
+  id: string;
+  email?: string | null;
+  display_name: string;
+  bio: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface ThroughlineEntry {
   id: string;
   content: string;

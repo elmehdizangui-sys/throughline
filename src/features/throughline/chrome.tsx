@@ -15,16 +15,24 @@ export function Masthead({
   onOpenTweaks,
   onView,
   view,
+  userLabel,
   userEmail,
-  onSignOut,
+  onOpenProfileSettings,
 }: {
   onOpenTweaks: () => void;
   onView: (next: MainView) => void;
   view: MainView;
+  userLabel?: string;
   userEmail?: string;
-  onSignOut: () => void;
+  onOpenProfileSettings: () => void;
 }) {
-  const initials = (userEmail ?? "U").slice(0, 2).toUpperCase();
+  const source = userLabel?.trim() || userEmail?.trim() || "User";
+  const initials = source
+    .split(/\s+/)
+    .map((chunk) => chunk[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   return (
     <header className="masthead">
       <div className="masthead-inner">
@@ -77,8 +85,8 @@ export function Masthead({
             <span style={{ marginLeft: 4 }}>Tweaks</span>
           </a>
         </nav>
-        <button className="me" type="button" onClick={onSignOut} title="Sign out">
-          <span>{userEmail ?? "Sign out"}</span>
+        <button className="me" type="button" onClick={onOpenProfileSettings} title="Open profile settings">
+          <span>{userLabel ?? userEmail ?? "Profile"}</span>
           <div className="avatar">{initials}</div>
         </button>
       </div>

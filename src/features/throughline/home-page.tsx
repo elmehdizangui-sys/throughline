@@ -13,6 +13,7 @@ import type {
   ThroughlineContextFilter,
   ThroughlineEntry,
   ThroughlineGoal,
+  ThroughlineProfile,
   ThroughlineProject,
   ThroughlineThreadsView,
   ThroughlineTimelineYear,
@@ -25,6 +26,7 @@ import { ThreadsView } from "@/features/throughline/threads-view";
 import { TimelineView } from "@/features/throughline/timeline-view";
 import { WeeklyReview } from "@/features/throughline/weekly-review";
 import { GoalProjectComposer, type ComposerSubmitPayload } from "@/features/throughline/goal-project-composer";
+import { ProfileSettings, type ProfileSettingsFormValues } from "@/features/throughline/profile-settings";
 
 function currentYear() {
   return new Date().getUTCFullYear();
@@ -62,7 +64,13 @@ export function ThroughlineHomePage() {
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [composerKind, setComposerKind] = useState<"goal" | "project">("goal");
+  const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
+  const [authResolved, setAuthResolved] = useState(false);
+  const [profile, setProfile] = useState<ThroughlineProfile | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
+  const [profileSaving, setProfileSaving] = useState(false);
   const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [composerPreselectedGoalId, setComposerPreselectedGoalId] = useState<string | null>(null);
@@ -91,29 +99,68 @@ export function ThroughlineHomePage() {
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
+  const loadProfile = useCallback(async (nextUserId: string, nextUserEmail?: string | null) => {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase
+      .from("throughline_profiles")
+      .select("id, email, display_name, bio, created_at, updated_at")
+      .eq("id", nextUserId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Failed to load profile", error);
+      setProfile((state) => state ?? { id: nextUserId, email: nextUserEmail ?? null, display_name: "", bio: "" });
+      return;
+    }
+
+    if (!data) {
+      setProfile({ id: nextUserId, email: nextUserEmail ?? null, display_name: "", bio: "" });
+      return;
+    }
+
+    setProfile(data as ThroughlineProfile);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     const supabase = getSupabaseBrowserClient();
-
-    void supabase.auth.getUser().then(({ data }) => {
-      if (!cancelled) {
-        setUserEmail(data.user?.email ?? undefined);
+    const applyUser = (nextUser: { id: string; email?: string | null } | null) => {
+      if (cancelled) return;
+      if (!nextUser) {
+        setUserId(null);
+        setUserEmail(undefined);
+        setProfile(null);
+        setAuthResolved(true);
+        return;
       }
-    });
+      setUserId(nextUser.id);
+      setUserEmail(nextUser.email ?? undefined);
+      setAuthResolved(true);
+      void loadProfile(nextUser.id, nextUser.email);
+    };
+
+    void supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        applyUser(data.user ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuthResolved(true);
+        }
+      });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!cancelled) {
-        setUserEmail(session?.user?.email ?? undefined);
-      }
+      applyUser(session?.user ?? null);
     });
 
     return () => {
       cancelled = true;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [loadProfile]);
 
   useEffect(() => {
     let cancelled = false;
@@ -446,11 +493,90 @@ export function ThroughlineHomePage() {
 
   const minimap = useMemo<MinimapWeek[]>(() => buildMinimap(entries), [entries]);
 
+  const userLabel = useMemo(() => {
+    const profileName = profile?.display_name?.trim();
+    if (profileName) return profileName;
+    if (userEmail) return userEmail.split("@")[0];
+    return undefined;
+  }, [profile?.display_name, userEmail]);
+
+  const greetingName = useMemo(() => {
+    const profileName = profile?.display_name?.trim();
+    return profileName || undefined;
+  }, [profile?.display_name]);
+
+  const saveProfile = useCallback(
+    async (values: ProfileSettingsFormValues) => {
+      const supabase = getSupabaseBrowserClient();
+      let activeUserId = userId;
+      let activeUserEmail = userEmail ?? null;
+
+      if (!activeUserId) {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          activeUserId = user.id;
+          activeUserEmail = user.email ?? null;
+          setUserId(user.id);
+          setUserEmail(user.email ?? undefined);
+          setAuthResolved(true);
+          void loadProfile(user.id, user.email);
+        }
+      }
+
+      if (!activeUserId) {
+        setProfileSaveError(
+          authResolved ? "Your session could not be verified. Please sign in again." : "Still checking your session. Try again in a moment.",
+        );
+        return;
+      }
+
+      const displayName = values.displayName.trim();
+      const bio = values.bio.trim();
+      if (!displayName) {
+        setProfileSaveError("Please add your name.");
+        return;
+      }
+
+      setProfileSaving(true);
+      setProfileSaveError(null);
+      try {
+        const { data, error } = await supabase
+          .from("throughline_profiles")
+          .upsert(
+            {
+              id: activeUserId,
+              email: activeUserEmail,
+              display_name: displayName.slice(0, 120),
+              bio: bio.slice(0, 2000),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "id" },
+          )
+          .select("id, email, display_name, bio, created_at, updated_at")
+          .single();
+
+        if (error) {
+          setProfileSaveError("Unable to save profile settings. Please try again.");
+          return;
+        }
+
+        setProfile(data as ThroughlineProfile);
+        setProfileOpen(false);
+      } finally {
+        setProfileSaving(false);
+      }
+    },
+    [authResolved, loadProfile, userEmail, userId],
+  );
+
   const signOut = useCallback(async () => {
     try {
       const supabase = getSupabaseBrowserClient();
       await supabase.auth.signOut();
     } finally {
+      setProfileOpen(false);
       window.location.href = "/login";
     }
   }, []);
@@ -466,7 +592,17 @@ export function ThroughlineHomePage() {
         onEdit={(kind, id) => openEditComposer(kind, id)}
         onStartReview={() => setReviewOpen(true)}
       />
-      <Masthead onOpenTweaks={() => setTweaksOpen(true)} onView={setView} view={view} userEmail={userEmail} onSignOut={signOut} />
+      <Masthead
+        onOpenTweaks={() => setTweaksOpen(true)}
+        onView={setView}
+        view={view}
+        userLabel={userLabel}
+        userEmail={userEmail}
+        onOpenProfileSettings={() => {
+          setProfileSaveError(null);
+          setProfileOpen(true);
+        }}
+      />
       <BigLineBar
         goals={goals}
         projects={projects}
@@ -481,6 +617,7 @@ export function ThroughlineHomePage() {
       {view === "feed" ? (
         <FeedView
           activeGreeting={activeGreeting}
+          greetingName={greetingName}
           entries={entries}
           goals={goals}
           projects={projects}
@@ -517,6 +654,16 @@ export function ThroughlineHomePage() {
         goals={goals}
         onClose={() => setComposerOpen(false)}
         onSubmit={handleComposerSubmit}
+      />
+      <ProfileSettings
+        open={profileOpen}
+        profile={profile}
+        email={userEmail}
+        isSaving={profileSaving}
+        errorMessage={profileSaveError}
+        onClose={() => setProfileOpen(false)}
+        onSave={saveProfile}
+        onSignOut={signOut}
       />
       <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} tweaks={tweaks} setTweak={setTweak} />
 

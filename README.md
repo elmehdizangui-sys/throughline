@@ -67,6 +67,7 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Dynamic behavior
 
 - Goals, projects, and entries are loaded only from Supabase.
+- User profile settings (name and bio) are stored in `throughline_profiles`.
 - No in-memory seed goals/projects/entries are used.
 - If your tables are empty, the UI starts empty until you add data.
 

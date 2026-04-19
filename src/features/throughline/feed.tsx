@@ -420,6 +420,7 @@ function Capture({
 
 interface FeedViewProps {
   activeGreeting: string;
+  greetingName?: string;
   entries: ThroughlineEntry[];
   goals: ThroughlineGoal[];
   projects: ThroughlineProject[];
@@ -438,6 +439,7 @@ interface FeedViewProps {
 
 export function FeedView({
   activeGreeting,
+  greetingName,
   entries,
   goals,
   projects,
@@ -453,6 +455,7 @@ export function FeedView({
   onTogglePromote,
   onMarkPivot,
 }: FeedViewProps) {
+  const trimmedGreetingName = greetingName?.trim();
   return (
     <main className="main">
       <div className="dateline">
@@ -463,7 +466,8 @@ export function FeedView({
         </span>
       </div>
       <h1 className="greeting">
-        {activeGreeting}, Alex. <em>What's worth keeping?</em>
+        {trimmedGreetingName ? `${activeGreeting}, ${trimmedGreetingName}. ` : `${activeGreeting}. `}
+        <em>What's worth keeping?</em>
       </h1>
 
       <Capture goals={goals} projects={projects} onAdd={onAddEntry} />
