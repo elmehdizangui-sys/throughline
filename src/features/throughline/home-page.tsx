@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DEFAULT_TWEAKS } from "@/lib/seed";
 import { buildMinimap } from "@/lib/minimap";
+import { getWeekKey } from "@/lib/week-key";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type {
   CreateEntryPayload,
@@ -25,6 +26,7 @@ import { FeedView } from "@/features/throughline/feed";
 import { applyTweaks, formatDay, getEntryPlainText, Icon } from "@/features/throughline/shared";
 import { ThreadsView } from "@/features/throughline/threads-view";
 import { TimelineView } from "@/features/throughline/timeline-view";
+import { MuhasabahView } from "@/features/throughline/muhasabah-view";
 import { WeeklyReview } from "@/features/throughline/weekly-review";
 import { GoalProjectComposer, type ComposerSubmitPayload } from "@/features/throughline/goal-project-composer";
 import { ProfileSettings, type ProfileSettingsFormValues } from "@/features/throughline/profile-settings";
@@ -39,13 +41,6 @@ function clampYear(year: number) {
   return Math.max(2000, Math.min(2100, year));
 }
 
-function getWeekKey(): string {
-  const now = new Date();
-  const startOfYear = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
-  const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
-  const week = Math.ceil((dayOfYear + 1) / 7);
-  return `${now.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
-}
 
 export function ThroughlineHomePage() {
   const [goals, setGoals] = useState<ThroughlineGoal[]>([]);
@@ -707,7 +702,9 @@ export function ThroughlineHomePage() {
           />
         ) : null}
 
-        {view === "threads" ? <ThreadsView data={threadsData} isLoading={threadsLoading} entries={entries} /> : null}
+        {view === "threads" ? (
+          <ThreadsView data={threadsData} isLoading={threadsLoading} entries={entries} akhirahLens={tweaks.akhirahLens ?? false} />
+        ) : null}
 
         {view === "map" ? (
           <TimelineView
@@ -715,8 +712,11 @@ export function ThroughlineHomePage() {
             isLoading={timelineLoading}
             entries={entries}
             onYearChange={(nextYear) => setTimelineYear(clampYear(nextYear))}
+            akhirahLens={tweaks.akhirahLens ?? false}
           />
         ) : null}
+
+        {view === "review" ? <MuhasabahView /> : null}
 
         {reviewOpen ? <WeeklyReview entries={entries} onClose={() => setReviewOpen(false)} onApply={applyReview} /> : null}
 

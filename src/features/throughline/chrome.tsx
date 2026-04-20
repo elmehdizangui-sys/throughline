@@ -78,6 +78,16 @@ export function Masthead({
           >
             Timeline
           </a>
+          <a
+            href="#"
+            className={view === "review" ? "active" : ""}
+            onClick={(event) => {
+              event.preventDefault();
+              onView("review");
+            }}
+          >
+            Review
+          </a>
           <span className="sep" />
           {onToggleAkhirahLens && (
             <button

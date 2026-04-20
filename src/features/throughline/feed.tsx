@@ -3,6 +3,7 @@ import type {
   CreateEntryPayload,
   EntryPriority,
   FeedFilter,
+  HeartState,
   ThroughlineLink,
   ThroughlineContextFilter,
   ThroughlineEntry,
@@ -244,6 +245,7 @@ function Capture({
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [isCode, setIsCode] = useState(false);
   const [priority, setPriority] = useState<EntryPriority | null>(null);
+  const [stateOfHeart, setStateOfHeart] = useState<HeartState | null>(null);
 
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const fallbackInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -348,6 +350,7 @@ function Capture({
       isCode,
       link: firstLinkFromText(markdown),
       priority: priority ?? undefined,
+      stateOfHeart: stateOfHeart ?? undefined,
     });
     if (editor) {
       editor.replaceBlocks(editor.document, [{ type: "paragraph", content: "" }]);
@@ -359,7 +362,8 @@ function Capture({
     setSelectedProjects([]);
     setIsCode(false);
     setPriority(null);
-  }, [blockNoteView, editor, htmlValue, isCode, markdownValue, onAdd, priority, selectedGoals, selectedProjects, tags]);
+    setStateOfHeart(null);
+  }, [blockNoteView, editor, htmlValue, isCode, markdownValue, onAdd, priority, selectedGoals, selectedProjects, stateOfHeart, tags]);
 
   const BlockNoteRenderer = blockNoteView;
   const timePlaceholder = getTimePlaceholder();
@@ -423,6 +427,24 @@ function Capture({
           >
             Akhirah
           </button>
+        </div>
+      </div>
+
+      <div className="capture-heart">
+        <div className="capture-intention-label">Heart state (Ḥāl):</div>
+        <div className="heart-state-toggle">
+          {(["open", "clear", "clouded", "contracted"] as const).map((s) => (
+            <button
+              key={s}
+              className={stateOfHeart === s ? "on" : ""}
+              onClick={() => setStateOfHeart((prev) => (prev === s ? null : s))}
+              type="button"
+              aria-pressed={stateOfHeart === s}
+              title={s === "open" ? "Inshirāḥ — expansive" : s === "clear" ? "Ṣafā — clear" : s === "clouded" ? "Ghaflah — distracted" : "Qabd — contracted"}
+            >
+              {s === "open" ? "○ Inshirāḥ" : s === "clear" ? "◇ Ṣafā" : s === "clouded" ? "≈ Ghaflah" : "● Qabd"}
+            </button>
+          ))}
         </div>
       </div>
 

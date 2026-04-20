@@ -1,12 +1,17 @@
 import { buildMinimap } from "@/lib/minimap";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getWeekKey } from "@/lib/week-key";
 import type {
   CreateGoalPayload,
   CreateCommitmentPayload,
   CreateEntryPayload,
   CreateProjectPayload,
   EntryPriority,
+  GoalIntent,
   GoalStatus,
+  HeartState,
+  MuhasabahReport,
+  MuhasabahThread,
   PatchCommitmentPayload,
   PatchEntryPayload,
   ThroughlineBootstrap,
@@ -40,6 +45,7 @@ interface DbEntryRow {
   slot_kind: string | null;
   pivot_label: string | null;
   priority?: string | null;
+  state_of_heart?: string | null;
 }
 
 interface DbGoalRow {
@@ -51,6 +57,7 @@ interface DbGoalRow {
   active_to: string | null;
   order_index: number;
   status?: string | null;
+  primary_intent?: string | null;
 }
 
 interface DbProjectRow {
@@ -94,11 +101,22 @@ function mapEntryRow(row: DbEntryRow): ThroughlineEntry {
     slotKind: row.slot_kind ?? undefined,
     pivotLabel: row.pivot_label ?? undefined,
     priority: parsePriority(row.priority),
+    stateOfHeart: parseHeartState(row.state_of_heart),
   };
 }
 
 function parsePriority(value: string | null | undefined): EntryPriority | undefined {
   if (value === "dunya" || value === "akhirah") return value;
+  return undefined;
+}
+
+function parseHeartState(value: string | null | undefined): HeartState | undefined {
+  if (value === "open" || value === "clear" || value === "clouded" || value === "contracted") return value;
+  return undefined;
+}
+
+function parseGoalIntent(value: string | null | undefined): GoalIntent | undefined {
+  if (value === "immediate" || value === "legacy") return value;
   return undefined;
 }
 
@@ -124,6 +142,7 @@ function mapGoalRow(row: DbGoalRow): ThroughlineGoal {
     active_to: row.active_to ?? undefined,
     order_index: row.order_index,
     status: parseGoalStatus(row.status) ?? "active",
+    primary_intent: parseGoalIntent(row.primary_intent),
   };
 }
 
@@ -208,17 +227,10 @@ async function listGoalsProjects() {
   };
 }
 
-function currentWeekKey(): string {
-  const now = new Date();
-  const startOfYear = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
-  const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
-  const week = Math.ceil((dayOfYear + 1) / 7);
-  return `${now.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
-}
 
 export async function getBootstrapData(): Promise<ThroughlineBootstrap> {
   const supabase = getSupabaseAdmin();
-  const weekKey = currentWeekKey();
+  const weekKey = getWeekKey();
 
   const [{ goals, projects }, entriesRes, countRes, profileRes, commitmentsRes] = await Promise.all([
     listGoalsProjects(),
@@ -295,6 +307,7 @@ export async function createEntry(payload: CreateEntryPayload, userId?: string):
     slotKind: payload.slotKind,
     pivotLabel: payload.pivotLabel,
     priority: parsePriority(payload.priority),
+    stateOfHeart: parseHeartState(payload.stateOfHeart),
   };
 
   const supabase = getSupabaseAdmin();
@@ -316,6 +329,7 @@ export async function createEntry(payload: CreateEntryPayload, userId?: string):
     archived: false,
   };
   if (record.priority) insertPayload.priority = record.priority;
+  if (record.stateOfHeart) insertPayload.state_of_heart = record.stateOfHeart;
   if (userId) insertPayload.user_id = userId;
 
   let { data, error } = await supabase
@@ -374,6 +388,7 @@ export async function createGoal(payload: CreateGoalPayload, userId?: string): P
     order_index: orderIndex,
     status: payload.status ?? "active",
   };
+  if (payload.primary_intent) insertPayload.primary_intent = payload.primary_intent;
   if (userId) insertPayload.user_id = userId;
 
   const { data, error } = await supabase
@@ -395,6 +410,9 @@ export async function updateGoal(goalId: string, payload: UpdateGoalPayload): Pr
   if (typeof payload.active_to === "string" || payload.active_to === null) updatePayload.active_to = payload.active_to ?? null;
   if (typeof payload.order_index === "number") updatePayload.order_index = payload.order_index;
   if (payload.status) updatePayload.status = payload.status;
+  if (payload.primary_intent === "immediate" || payload.primary_intent === "legacy" || payload.primary_intent === null) {
+    updatePayload.primary_intent = payload.primary_intent ?? null;
+  }
   if (Object.keys(updatePayload).length === 0) return null;
 
   const supabase = getSupabaseAdmin();
@@ -778,4 +796,82 @@ export async function getTimelineView(rawYear: number): Promise<ThroughlineTimel
       : 0;
 
   return { year, nowWeek, weeks, pivots, ribbons };
+}
+
+export async function getMuhasabahReport(rawMonths = 1): Promise<MuhasabahReport> {
+  const months = Math.min(6, Math.max(1, Math.floor(rawMonths)));
+  const to = new Date();
+  const from = new Date(to);
+  from.setMonth(from.getMonth() - months);
+
+  const { goals, projects } = await listGoalsProjects();
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("throughline_entries")
+    .select("*")
+    .gte("created_at", from.toISOString())
+    .lte("created_at", to.toISOString())
+    .or("starred.eq.true,signal.eq.true,is_pivot.eq.true")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  const entries = (data ?? []).map((row) => mapEntryRow(row as DbEntryRow));
+
+  const toSignalItem = (entry: ThroughlineEntry) => ({
+    id: entry.id,
+    created_at: entry.created_at,
+    content: entry.content,
+    isPivot: entry.isPivot,
+    pivotLabel: entry.pivotLabel,
+    priority: entry.priority,
+    tags: entry.tags ?? [],
+  });
+
+  // Build O(entries) index maps to avoid O(goals × entries) + O(projects × entries) filter loops.
+  const goalEntryMap = new Map<string, ThroughlineEntry[]>();
+  const projectEntryMap = new Map<string, ThroughlineEntry[]>();
+  for (const entry of entries) {
+    for (const gId of (entry.goals ?? [])) {
+      const list = goalEntryMap.get(gId);
+      if (list) list.push(entry); else goalEntryMap.set(gId, [entry]);
+    }
+    for (const pId of (entry.projects ?? [])) {
+      const list = projectEntryMap.get(pId);
+      if (list) list.push(entry); else projectEntryMap.set(pId, [entry]);
+    }
+  }
+
+  const goalThreads: MuhasabahThread[] = goals.map((goal) => {
+    const goalEntries = goalEntryMap.get(goal.id) ?? [];
+    const signals = goalEntries.filter((e) => isSignal(e) && !e.isPivot).map(toSignalItem);
+    const pivots = goalEntries.filter((e) => e.isPivot).map(toSignalItem);
+    const akhirahCount = [...signals, ...pivots].filter((item) => item.priority === "akhirah").length;
+    const dunyaCount = [...signals, ...pivots].filter((item) => item.priority === "dunya").length;
+    return { id: goal.id, kind: "goal" as const, name: goal.name, color: goal.color, signals, pivots, akhirahCount, dunyaCount };
+  });
+
+  const projectThreads: MuhasabahThread[] = projects.map((project) => {
+    const projectEntries = projectEntryMap.get(project.id) ?? [];
+    const signals = projectEntries.filter((e) => isSignal(e) && !e.isPivot).map(toSignalItem);
+    const pivots = projectEntries.filter((e) => e.isPivot).map(toSignalItem);
+    const akhirahCount = [...signals, ...pivots].filter((item) => item.priority === "akhirah").length;
+    const dunyaCount = [...signals, ...pivots].filter((item) => item.priority === "dunya").length;
+    return { id: project.id, kind: "project" as const, name: project.name, color: project.color, signals, pivots, akhirahCount, dunyaCount };
+  });
+
+  const threads = [...goalThreads, ...projectThreads].filter((t) => t.signals.length > 0 || t.pivots.length > 0);
+  const totalSignals = threads.reduce((sum, t) => sum + t.signals.length, 0);
+  const totalPivots = threads.reduce((sum, t) => sum + t.pivots.length, 0);
+  const totalAkhirah = threads.reduce((sum, t) => sum + t.akhirahCount, 0);
+  const total = totalSignals + totalPivots;
+
+  return {
+    from: from.toISOString(),
+    to: to.toISOString(),
+    months,
+    threads,
+    totalSignals,
+    totalPivots,
+    akhirahFraction: total > 0 ? totalAkhirah / total : 0,
+  };
 }

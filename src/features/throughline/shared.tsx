@@ -183,7 +183,10 @@ export function getEntryPlainText(content: string) {
 function sanitizeRichHtml(html: string) {
   if (!html.trim()) return "";
   if (typeof window === "undefined" || typeof DOMParser === "undefined") {
-    return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "");
+    // SSR: return empty — the component is client-rendered, so this will
+    // be replaced by the full sanitizer on hydration. Returning html
+    // here would bypass event-handler and javascript: removal.
+    return "";
   }
 
   const parser = new DOMParser();

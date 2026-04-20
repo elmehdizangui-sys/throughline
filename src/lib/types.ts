@@ -4,12 +4,16 @@ export type DensityMode = "airy" | "balanced" | "dense";
 export type EntryStyle = "journal" | "card" | "line";
 export type FontPairing = "editorial" | "sans" | "serif";
 export type AccentName = "indigo" | "clay" | "moss" | "ink" | "rose";
-export type MainView = "feed" | "threads" | "map";
+export type MainView = "feed" | "threads" | "map" | "review";
 export type FeedFilter = "all" | "starred" | "links" | "code";
 export type ContextFilterType = "goal" | "project" | "tag";
 export type ThreadKind = "goal" | "project";
 export type EntryPriority = "dunya" | "akhirah";
 export type GoalStatus = "active" | "paused" | "someday" | "archived";
+/** Nafs / heart state at the moment of capture. */
+export type HeartState = "open" | "clear" | "clouded" | "contracted";
+/** Intentionality alignment set when a Life Goal is created. */
+export type GoalIntent = "immediate" | "legacy";
 
 export interface ThroughlineLink {
   title: string;
@@ -26,6 +30,7 @@ export interface ThroughlineGoal {
   active_to?: string;
   order_index?: number;
   status?: GoalStatus;
+  primary_intent?: GoalIntent;
 }
 
 export interface ThroughlineProject {
@@ -69,6 +74,7 @@ export interface ThroughlineEntry {
   slotKind?: string;
   pivotLabel?: string;
   priority?: EntryPriority;
+  stateOfHeart?: HeartState;
 }
 
 export interface MinimapWeek {
@@ -128,6 +134,7 @@ export interface CreateEntryPayload {
   slotKind?: string;
   pivotLabel?: string;
   priority?: EntryPriority;
+  stateOfHeart?: HeartState;
 }
 
 export interface PatchEntryPayload {
@@ -150,6 +157,7 @@ export interface CreateGoalPayload {
   active_to?: string;
   order_index?: number;
   status?: GoalStatus;
+  primary_intent?: GoalIntent;
 }
 
 export interface UpdateGoalPayload extends Partial<CreateGoalPayload> {}
@@ -253,4 +261,36 @@ export interface ThroughlineTimelineYear {
   weeks: ThroughlineTimelineWeek[];
   pivots: ThroughlineTimelinePivot[];
   ribbons: ThroughlineTimelineRibbon[];
+}
+
+export interface MuhasabahSignalItem {
+  id: string;
+  created_at: string;
+  content: string;
+  isPivot?: boolean;
+  pivotLabel?: string;
+  priority?: EntryPriority;
+  tags: string[];
+}
+
+export interface MuhasabahThread {
+  id: string;
+  kind: ThreadKind;
+  name: string;
+  color?: string;
+  signals: MuhasabahSignalItem[];
+  pivots: MuhasabahSignalItem[];
+  akhirahCount: number;
+  dunyaCount: number;
+}
+
+export interface MuhasabahReport {
+  from: string;
+  to: string;
+  months: number;
+  threads: MuhasabahThread[];
+  totalSignals: number;
+  totalPivots: number;
+  /** Fraction 0–1 of signals/pivots tagged as akhirah. */
+  akhirahFraction: number;
 }

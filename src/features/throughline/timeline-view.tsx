@@ -22,10 +22,11 @@ export interface TimelineViewProps {
   isLoading: boolean;
   entries: ThroughlineEntry[];
   onYearChange: (nextYear: number) => void;
+  akhirahLens?: boolean;
 }
 
 /** Renders the yearly timeline surface with week, ribbon, and pivot details. */
-export function TimelineView({ data, isLoading, entries, onYearChange }: TimelineViewProps) {
+export function TimelineView({ data, isLoading, entries, onYearChange, akhirahLens }: TimelineViewProps) {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
   useEffect(() => {
@@ -60,6 +61,19 @@ export function TimelineView({ data, isLoading, entries, onYearChange }: Timelin
     () => selectedEntries.filter((entry) => isEntrySignal(entry) || entry.isPivot).slice(0, 10),
     [selectedEntries],
   );
+
+  const akhirahRibbonIds = useMemo(() => {
+    if (!data?.ribbons.length) return new Set<string>();
+    const set = new Set<string>();
+    for (const ribbon of data.ribbons) {
+      const has = entries.some((e) =>
+        e.priority === "akhirah" &&
+        (ribbon.kind === "goal" ? (e.goals ?? []).includes(ribbon.id) : (e.projects ?? []).includes(ribbon.id)),
+      );
+      if (has) set.add(ribbon.id);
+    }
+    return set;
+  }, [data, entries]);
 
   if (isLoading) {
     return (
@@ -151,14 +165,20 @@ export function TimelineView({ data, isLoading, entries, onYearChange }: Timelin
         </div>
 
         <div className="ribbon-list">
-          {data.ribbons.map((ribbon) => (
-            <div key={`${ribbon.kind}-${ribbon.id}`} className={`ribbon ${ribbon.kind}`}>
+          {data.ribbons.map((ribbon) => {
+            const dimmed = akhirahLens && !akhirahRibbonIds.has(ribbon.id);
+            return (
+            <div
+              key={`${ribbon.kind}-${ribbon.id}`}
+              className={`ribbon ${ribbon.kind} ${dimmed ? "akhirah-dim-ribbon" : ""}`}
+            >
               <span className="label">{ribbon.label}</span>
               <span className="range">
                 {formatDate(ribbon.start)} - {formatDate(ribbon.end)}
               </span>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="pivot-list">

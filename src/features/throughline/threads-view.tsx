@@ -2,6 +2,20 @@ import { useEffect, useMemo, useState } from "react";
 import { CodeBlock, getEntryPlainText, isEntrySignal, renderContent } from "@/features/throughline/shared";
 import type { ThroughlineEntry, ThroughlineThreadsView } from "@/lib/types";
 
+const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+
+function isSilentThread(row: ThroughlineThreadsView["rows"][number]): boolean {
+  if (row.captures === 0) return false;
+  if (row.signals > 0) return false;
+  if (!row.last_at) return false;
+  return Date.now() - new Date(row.last_at).getTime() > FOURTEEN_DAYS_MS;
+}
+
+function daysSince(iso?: string): number {
+  if (!iso) return 0;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24));
+}
+
 function formatDate(value?: string) {
   if (!value) return "—";
   return new Date(value).toLocaleDateString([], { month: "short", day: "numeric" });
@@ -33,10 +47,11 @@ export interface ThreadsViewProps {
   data: ThroughlineThreadsView | null;
   isLoading: boolean;
   entries: ThroughlineEntry[];
+  akhirahLens?: boolean;
 }
 
 /** Renders the threads surface with selectable timeline points and detail panels. */
-export function ThreadsView({ data, isLoading, entries }: ThreadsViewProps) {
+export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsViewProps) {
   const [activeThread, setActiveThread] = useState<string | null>(null);
   const [activePoint, setActivePoint] = useState<string | null>(null);
 
@@ -71,6 +86,17 @@ export function ThreadsView({ data, isLoading, entries }: ThreadsViewProps) {
   );
 
   const activeThreadKey = activeRow ? threadKey(activeRow.kind, activeRow.id) : null;
+
+  const akhirahThreadKeys = useMemo(() => {
+    if (!data?.rows.length) return new Set<string>();
+    const set = new Set<string>();
+    for (const entry of entries) {
+      if (entry.priority !== "akhirah") continue;
+      for (const gId of (entry.goals ?? [])) set.add(`goal:${gId}`);
+      for (const pId of (entry.projects ?? [])) set.add(`project:${pId}`);
+    }
+    return set;
+  }, [data, entries]);
 
   useEffect(() => {
     setActivePoint((current) => (current && activeEntries.some((entry) => entry.id === current) ? current : null));
@@ -121,19 +147,26 @@ export function ThreadsView({ data, isLoading, entries }: ThreadsViewProps) {
         </div>
 
         <div className="thread-list" role="list" aria-label="Thread list">
-          {data.rows.map((row) => (
+          {data.rows.map((row) => {
+            const key = threadKey(row.kind, row.id);
+            const silent = isSilentThread(row);
+            const dimmed = akhirahLens && !akhirahThreadKeys.has(key);
+            return (
             <div
               key={`${row.kind}-${row.id}`}
-              className={`thread-row ${row.kind} ${threadKey(row.kind, row.id) === activeThread ? "active" : ""}`}
+              className={`thread-row ${row.kind} ${key === activeThread ? "active" : ""} ${dimmed ? "akhirah-dim" : ""}`}
               role="listitem"
             >
               <div className="meta">
-                <div className="kind">{row.kind === "goal" ? "Life goal" : "Project"}</div>
+                <div className="kind">
+                  {row.kind === "goal" ? "Life goal" : "Project"}
+                  {silent && <span className="thread-quiet-badge" title="No signals in 14+ days — Ṣabr or stagnation?">Quiet</span>}
+                </div>
                 <button
                   className="name-btn"
-                  onClick={() => setActiveThread(threadKey(row.kind, row.id))}
+                  onClick={() => setActiveThread(key)}
                   type="button"
-                  aria-pressed={threadKey(row.kind, row.id) === activeThread}
+                  aria-pressed={key === activeThread}
                   aria-label={`Open thread ${row.name}`}
                 >
                   {row.name}
@@ -169,7 +202,8 @@ export function ThreadsView({ data, isLoading, entries }: ThreadsViewProps) {
                 </div>
               ) : null}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="thread-detail-panel" aria-live="polite">
@@ -184,6 +218,17 @@ export function ThreadsView({ data, isLoading, entries }: ThreadsViewProps) {
               <span>Last {formatDate(activeRow.last_at)}</span>
             </div>
           </div>
+
+          {isSilentThread(activeRow) && (
+            <div className="sabr-prompt">
+              <div className="sabr-prompt-label">Ṣabr or stagnation?</div>
+              <p>
+                This thread has been quiet for {daysSince(activeRow.last_at)} days with no signals marked. Is this patient
+                persistence — <em>Ṣabr</em> — or have you drifted from this throughline? Reflect on what is keeping it
+                silent before your next weekly review.
+              </p>
+            </div>
+          )}
 
           {activeCapture ? (
             <div className="capture-detail">

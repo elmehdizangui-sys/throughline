@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   CreateGoalPayload,
   CreateProjectPayload,
+  GoalIntent,
   GoalStatus,
   ThroughlineGoal,
   ThroughlineProject,
@@ -48,7 +49,9 @@ export function GoalProjectComposer({
   const [color, setColor] = useState(COLOR_CHOICES[0]);
   const [goalId, setGoalId] = useState<string | null>(null);
   const [status, setStatus] = useState<GoalStatus>("active");
+  const [primaryIntent, setPrimaryIntent] = useState<GoalIntent | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
+  const submittingRef = useRef(false);
 
   useEffect(() => {
     if (!open) return;
@@ -60,6 +63,7 @@ export function GoalProjectComposer({
       setColor(editingGoal.color ?? COLOR_CHOICES[0]);
       setGoalId(null);
       setStatus(editingGoal.status ?? "active");
+      setPrimaryIntent(editingGoal.primary_intent);
       return;
     }
     if (editingProject) {
@@ -75,6 +79,7 @@ export function GoalProjectComposer({
     setGoalId(preselectedGoalId ?? null);
     setColor(goals.find((goal) => goal.id === preselectedGoalId)?.color ?? COLOR_CHOICES[0]);
     setStatus("active");
+    setPrimaryIntent(undefined);
   }, [open, initialKind, editingGoal, editingProject, preselectedGoalId, goals]);
 
   useEffect(() => {
@@ -95,7 +100,8 @@ export function GoalProjectComposer({
 
   const submit = async () => {
     const trimmed = name.trim();
-    if (!trimmed || isSaving) return;
+    if (!trimmed || isSaving || submittingRef.current) return;
+    submittingRef.current = true;
     setIsSaving(true);
     try {
       if (kind === "goal") {
@@ -107,6 +113,7 @@ export function GoalProjectComposer({
             color,
             target_date: targetDate || undefined,
             status,
+            primary_intent: primaryIntent,
           },
         });
       } else {
@@ -124,6 +131,7 @@ export function GoalProjectComposer({
       }
       onClose();
     } finally {
+      submittingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -177,6 +185,35 @@ export function GoalProjectComposer({
               ))}
             </div>
           </div>
+
+          {kind === "goal" && (
+            <div className="composer-field">
+              <label className="composer-label">Primary Intent <span className="composer-label-sub">(Niyyah)</span></label>
+              <div className="composer-intent">
+                <button
+                  className={primaryIntent === "immediate" ? "on" : ""}
+                  onClick={() => setPrimaryIntent((prev) => (prev === "immediate" ? undefined : "immediate"))}
+                  type="button"
+                  aria-pressed={primaryIntent === "immediate"}
+                >
+                  <span className="intent-icon">◎</span> Dunya · Immediate
+                </button>
+                <button
+                  className={primaryIntent === "legacy" ? "on" : ""}
+                  onClick={() => setPrimaryIntent((prev) => (prev === "legacy" ? undefined : "legacy"))}
+                  type="button"
+                  aria-pressed={primaryIntent === "legacy"}
+                >
+                  <span className="intent-icon">☽</span> Akhirah · Legacy
+                </button>
+              </div>
+              {!primaryIntent && (
+                <div className="composer-field-hint">
+                  Aligning Niyyah at inception tethers your means to a spiritual end.
+                </div>
+              )}
+            </div>
+          )}
 
           {kind === "project" ? (
             <div className="composer-field">
