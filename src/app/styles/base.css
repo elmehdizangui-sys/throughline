@@ -20,7 +20,7 @@
   --f-body: var(--font-inter), system-ui, sans-serif;
   --f-mono: var(--font-mono), ui-monospace, monospace;
   --pad: 24px;
-  --feed-w: 680px;
+  --feed-w: 800px;
   --radius: 10px;
   --radius-lg: 16px;
   --e: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -515,8 +515,8 @@ a {
 
 .capture-intention-label {
   font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  letter-spacing: 0.07em;
   color: var(--ink-3);
 }
 
@@ -532,19 +532,30 @@ a {
 
 .capture-intention-toggle button {
   border: none;
-  border-radius: 999px;
+  border-radius: 6px;
   background: transparent;
   color: var(--ink-3);
   font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 5px 10px;
+  padding: 8px 16px;
   cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.capture-intention-toggle button:hover {
+  color: var(--ink);
+  background: var(--paper-3);
 }
 
 .capture-intention-toggle button.on {
   background: var(--ink);
+  color: var(--paper);
+}
+
+.capture-intention-toggle button.on[data-priority="akhirah"] {
+  background: var(--accent);
   color: var(--paper);
 }
 

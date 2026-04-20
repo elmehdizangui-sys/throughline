@@ -570,9 +570,9 @@ html[data-layout="sidebar"] .main {
   border-radius: 10px;
   background: var(--card);
   color: var(--ink);
-  font-size: 16px;
+  font-size: 18px;
   font-family: var(--f-body);
-  padding: 10px 12px;
+  padding: 14px 16px;
 }
 
 .profile-textarea {
@@ -1166,23 +1166,23 @@ html[data-layout="sidebar"] .main {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 3px;
+  padding: 4px;
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--paper-2);
 }
 
 .heart-state-toggle button {
   border: none;
-  border-radius: 999px;
+  border-radius: 6px;
   background: transparent;
   color: var(--ink-3);
   font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  padding: 4px 9px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 8px 12px;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
 }
 
 .heart-state-toggle button:hover {
@@ -1193,6 +1193,90 @@ html[data-layout="sidebar"] .main {
 .heart-state-toggle button.on {
   background: var(--ink);
   color: var(--paper);
+}
+
+.heart-state-toggle button.on[data-state="open"] {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.heart-state-toggle button.on[data-state="clear"] {
+  background: var(--star);
+  color: var(--ink);
+}
+
+.heart-state-toggle button.on[data-state="clouded"] {
+  background: var(--ink-3);
+  color: var(--paper);
+}
+
+.heart-state-toggle button.on[data-state="contracted"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ─── Internal Audit Panel ───────────────────────────────────────────────── */
+
+.internal-audit-panel {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  transition: box-shadow 0.25s var(--e), border-color 0.25s var(--e);
+}
+
+.internal-audit-panel.akhirah-active {
+  border-color: color-mix(in oklab, var(--accent) 40%, var(--rule));
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 10%, transparent), inset 0 0 20px color-mix(in oklab, var(--accent) 5%, transparent);
+}
+
+@media (max-width: 640px) {
+  .internal-audit-panel {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.audit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audit-label {
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  font-weight: 500;
+}
+
+.internal-audit-panel .capture-intention-toggle {
+  border-radius: 10px;
+  width: 100%;
+  justify-content: stretch;
+}
+
+.internal-audit-panel .capture-intention-toggle button {
+  flex: 1;
+  text-align: center;
+}
+
+.internal-audit-panel .heart-state-toggle {
+  width: 100%;
+  justify-content: stretch;
+}
+
+.internal-audit-panel .heart-state-toggle button {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  padding: 8px 6px;
 }
 
 /* ─── Sabr / stagnation detection ────────────────────────────────────────── */

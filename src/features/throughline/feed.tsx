@@ -230,10 +230,12 @@ function Capture({
   goals,
   projects,
   onAdd,
+  akhirahLens,
 }: {
   goals: ThroughlineGoal[];
   projects: ThroughlineProject[];
   onAdd: (payload: CreateEntryPayload) => void;
+  akhirahLens?: boolean;
 }) {
   const [blockNoteView, setBlockNoteView] = useState<ComponentType<BlockNoteRuntimeViewProps> | null>(null);
   const [editor, setEditor] = useState<BlockNoteRuntimeEditor | null>(null);
@@ -408,43 +410,47 @@ function Capture({
         />
       )}
 
-      <div className="capture-intention">
-        <div className="capture-intention-label">Intention check: is this for Dunya (Immediate) or Akhirah (Legacy)?</div>
-        <div className="capture-intention-toggle">
-          <button
-            className={priority === "dunya" ? "on" : ""}
-            onClick={() => setPriority((state) => (state === "dunya" ? null : "dunya"))}
-            type="button"
-            aria-pressed={priority === "dunya"}
-          >
-            Dunya
-          </button>
-          <button
-            className={priority === "akhirah" ? "on" : ""}
-            onClick={() => setPriority((state) => (state === "akhirah" ? null : "akhirah"))}
-            type="button"
-            aria-pressed={priority === "akhirah"}
-          >
-            Akhirah
-          </button>
-        </div>
-      </div>
-
-      <div className="capture-heart">
-        <div className="capture-intention-label">Heart state (Ḥāl):</div>
-        <div className="heart-state-toggle">
-          {(["open", "clear", "clouded", "contracted"] as const).map((s) => (
+      <div className={`internal-audit-panel${akhirahLens ? " akhirah-active" : ""}`}>
+        <div className="audit-col">
+          <div className="audit-label">Niyyah · Intention</div>
+          <div className="capture-intention-toggle">
             <button
-              key={s}
-              className={stateOfHeart === s ? "on" : ""}
-              onClick={() => setStateOfHeart((prev) => (prev === s ? null : s))}
+              className={priority === "dunya" ? "on" : ""}
+              data-priority="dunya"
+              onClick={() => setPriority((state) => (state === "dunya" ? null : "dunya"))}
               type="button"
-              aria-pressed={stateOfHeart === s}
-              title={s === "open" ? "Inshirāḥ — expansive" : s === "clear" ? "Ṣafā — clear" : s === "clouded" ? "Ghaflah — distracted" : "Qabd — contracted"}
+              aria-pressed={priority === "dunya"}
             >
-              {s === "open" ? "○ Inshirāḥ" : s === "clear" ? "◇ Ṣafā" : s === "clouded" ? "≈ Ghaflah" : "● Qabd"}
+              ◎ Dunya
             </button>
-          ))}
+            <button
+              className={priority === "akhirah" ? "on" : ""}
+              data-priority="akhirah"
+              onClick={() => setPriority((state) => (state === "akhirah" ? null : "akhirah"))}
+              type="button"
+              aria-pressed={priority === "akhirah"}
+            >
+              ☽ Akhirah
+            </button>
+          </div>
+        </div>
+        <div className="audit-col">
+          <div className="audit-label">Ḥāl · Heart State</div>
+          <div className="heart-state-toggle">
+            {(["open", "clear", "clouded", "contracted"] as const).map((s) => (
+              <button
+                key={s}
+                data-state={s}
+                className={stateOfHeart === s ? "on" : ""}
+                onClick={() => setStateOfHeart((prev) => (prev === s ? null : s))}
+                type="button"
+                aria-pressed={stateOfHeart === s}
+                title={s === "open" ? "Inshirāḥ — expansive" : s === "clear" ? "Ṣafā — clear" : s === "clouded" ? "Ghaflah — distracted" : "Qabd — contracted"}
+              >
+                {s === "open" ? "○ Inshirāḥ" : s === "clear" ? "◇ Ṣafā" : s === "clouded" ? "≈ Ghaflah" : "● Qabd"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -621,7 +627,7 @@ export function FeedView({
         <em>What's worth keeping?</em>
       </h1>
 
-      <Capture goals={goals} projects={projects} onAdd={onAddEntry} />
+      <Capture goals={goals} projects={projects} onAdd={onAddEntry} akhirahLens={akhirahLens} />
       <FilterBar filter={filter} setFilter={setFilter} count={filteredEntries.filter((entry) => !entry.isPivot).length} />
 
       {contextFilter ? (
