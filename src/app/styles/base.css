@@ -167,6 +167,12 @@ a {
 
 .nav a.active {
   color: var(--ink);
+  font-weight: 500;
+  background: var(--paper-2);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
 }
 
 .nav .sep {
@@ -567,7 +573,7 @@ a {
 .chip.selected {
   background: var(--accent-soft);
   color: var(--accent-ink);
-  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
 }
 
 .chip .k {
@@ -627,7 +633,7 @@ a {
 .tool-btn.active {
   background: var(--accent-soft);
   color: var(--accent-ink);
-  border-color: color-mix(in oklab, var(--accent) 25%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
 }
 
 .tool-right {
@@ -734,6 +740,8 @@ a {
 .link-option.selected {
   background: var(--accent-soft);
   color: var(--accent-ink);
+  outline: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  outline-offset: -1px;
 }
 
 .link-option .dot {
