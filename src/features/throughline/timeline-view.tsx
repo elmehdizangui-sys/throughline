@@ -23,10 +23,11 @@ export interface TimelineViewProps {
   entries: ThroughlineEntry[];
   onYearChange: (nextYear: number) => void;
   akhirahLens?: boolean;
+  onToggleAkhirahLens?: () => void;
 }
 
 /** Renders the yearly timeline surface with week, ribbon, and pivot details. */
-export function TimelineView({ data, isLoading, entries, onYearChange, akhirahLens }: TimelineViewProps) {
+export function TimelineView({ data, isLoading, entries, onYearChange, akhirahLens, onToggleAkhirahLens }: TimelineViewProps) {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
 
   useEffect(() => {
@@ -77,8 +78,8 @@ export function TimelineView({ data, isLoading, entries, onYearChange, akhirahLe
 
   if (isLoading) {
     return (
-      <main className="main">
-        <div className="view-shell">
+      <main className="main main-wide">
+        <div className="view-shell view-shell-wide">
           <div className="view-head">
             <h1>
               Timeline is <em>loading</em>.
@@ -91,8 +92,8 @@ export function TimelineView({ data, isLoading, entries, onYearChange, akhirahLe
 
   if (!data || !selected) {
     return (
-      <main className="main">
-        <div className="view-shell">
+      <main className="main main-wide">
+        <div className="view-shell view-shell-wide">
           <div className="view-head">
             <h1>
               Year line is <em>empty</em>.
@@ -111,8 +112,8 @@ export function TimelineView({ data, isLoading, entries, onYearChange, akhirahLe
   };
 
   return (
-    <main className="main">
-      <div className="view-shell">
+    <main className="main main-wide">
+      <div className="view-shell view-shell-wide">
         <div className="view-head">
           <h1>
             The year in <em>one line</em>.
@@ -120,6 +121,20 @@ export function TimelineView({ data, isLoading, entries, onYearChange, akhirahLe
           <p className="deck-copy">
             {data.year} · Week {data.nowWeek || 0} · {data.pivots.length} pivots
           </p>
+          {onToggleAkhirahLens && (
+            <button
+              className={`akhirah-lens-btn ${akhirahLens ? "on" : ""}`}
+              onClick={onToggleAkhirahLens}
+              type="button"
+              aria-pressed={akhirahLens ?? false}
+              title={akhirahLens ? "Akhirah lens on — click to disable" : "Enable Akhirah lens to dim Dunya threads"}
+            >
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true" style={{ marginRight: 4 }}>
+                <path d="M13 10.5a6 6 0 01-7.5-7.5A6 6 0 1013 10.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Akhirah lens {akhirahLens ? "on" : "off"}
+            </button>
+          )}
           <div className="year-nav">
             <button onClick={() => onYearChange(data.year - 1)} type="button">
               ‹ {data.year - 1}
@@ -208,7 +223,7 @@ export function TimelineView({ data, isLoading, entries, onYearChange, akhirahLe
                 <div key={entry.id} className="signal-row static">
                   <span className="when">{formatDayTime(entry.created_at)}</span>
                   <div className={`txt ${entry.isPivot ? "pivot" : ""}`}>
-                    {entry.isCode ? (
+                    {entry.isCode && entry.content ? (
                       <CodeBlock content={entry.content} />
                     ) : (
                       renderContent(entry.content || entry.pivotLabel || entry.to || "Pivot")

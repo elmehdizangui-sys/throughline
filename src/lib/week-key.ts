@@ -11,3 +11,8 @@ export function getWeekKey(date = new Date()): string {
   const week = Math.ceil((dayOfYear + 1) / 7);
   return `${date.getUTCFullYear()}-W${String(week).padStart(2, "0")}`;
 }
+
+/** Returns just the "WXX" label portion — for display and minimap bucketing. */
+export function getWeekLabel(date = new Date()): string {
+  return getWeekKey(date).split("-")[1]!;
+}

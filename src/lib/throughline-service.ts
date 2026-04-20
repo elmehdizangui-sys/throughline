@@ -347,7 +347,7 @@ export async function createEntry(payload: CreateEntryPayload, userId?: string):
   return mapEntryRow(data as DbEntryRow);
 }
 
-export async function patchEntry(entryId: string, patch: PatchEntryPayload): Promise<ThroughlineEntry | null> {
+export async function patchEntry(entryId: string, patch: PatchEntryPayload, userId?: string): Promise<ThroughlineEntry | null> {
   const updatePayload: Record<string, boolean | string | null> = {};
   if (typeof patch.starred === "boolean") updatePayload.starred = patch.starred;
   if (typeof patch.archived === "boolean") updatePayload.archived = patch.archived;
@@ -360,18 +360,25 @@ export async function patchEntry(entryId: string, patch: PatchEntryPayload): Pro
   if (patch.priority === "dunya" || patch.priority === "akhirah" || patch.priority === null) {
     updatePayload.priority = patch.priority ?? null;
   }
+  if (patch.stateOfHeart === null || patch.stateOfHeart === "open" || patch.stateOfHeart === "clear" || patch.stateOfHeart === "clouded" || patch.stateOfHeart === "contracted") {
+    updatePayload.state_of_heart = patch.stateOfHeart ?? null;
+  }
 
   if (Object.keys(updatePayload).length === 0) return null;
 
   const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
+  let query = supabase
     .from("throughline_entries")
     .update(updatePayload)
-    .eq("id", entryId)
-    .select("*")
-    .single();
+    .eq("id", entryId);
+
+  // Enforce ownership at the application layer as defence-in-depth alongside RLS.
+  if (userId) query = query.eq("user_id", userId);
+
+  const { data, error } = await query.select("*").single();
 
   if (error) throw error;
+  if (!data) return null;
   return mapEntryRow(data as DbEntryRow);
 }
 
@@ -847,7 +854,7 @@ export async function getMuhasabahReport(rawMonths = 1): Promise<MuhasabahReport
     const pivots = goalEntries.filter((e) => e.isPivot).map(toSignalItem);
     const akhirahCount = [...signals, ...pivots].filter((item) => item.priority === "akhirah").length;
     const dunyaCount = [...signals, ...pivots].filter((item) => item.priority === "dunya").length;
-    return { id: goal.id, kind: "goal" as const, name: goal.name, color: goal.color, signals, pivots, akhirahCount, dunyaCount };
+    return { id: goal.id, kind: "goal" as const, name: goal.name, color: goal.color, primary_intent: goal.primary_intent, signals, pivots, akhirahCount, dunyaCount };
   });
 
   const projectThreads: MuhasabahThread[] = projects.map((project) => {

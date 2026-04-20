@@ -1,15 +1,5 @@
 import type { MinimapWeek, ThroughlineEntry } from "@/lib/types";
-
-function isoWeekLabel(date: Date) {
-  const target = new Date(date.valueOf());
-  const dayNumber = (date.getDay() + 6) % 7;
-  target.setDate(target.getDate() - dayNumber + 3);
-  const firstThursday = new Date(target.getFullYear(), 0, 4);
-  const firstDayNumber = (firstThursday.getDay() + 6) % 7;
-  firstThursday.setDate(firstThursday.getDate() - firstDayNumber + 3);
-  const weekNo = 1 + Math.round((target.getTime() - firstThursday.getTime()) / 604800000);
-  return `W${String(weekNo).padStart(2, "0")}`;
-}
+import { getWeekLabel } from "@/lib/week-key";
 
 function activityLevel(captures: number, signals: number): MinimapWeek["level"] {
   // Signals carry more coaching weight than raw capture volume.
@@ -31,7 +21,7 @@ export function buildMinimap(entries: ThroughlineEntry[], weeks = 8): MinimapWee
   >();
 
   for (const entry of entries) {
-    const key = isoWeekLabel(new Date(entry.created_at));
+    const key = getWeekLabel(new Date(entry.created_at));
     const prev = weekMap.get(key) ?? { captures: 0, signals: 0, pivot: false };
     const isSignal = Boolean(entry.signal || entry.starred);
     weekMap.set(key, {
@@ -46,7 +36,7 @@ export function buildMinimap(entries: ThroughlineEntry[], weeks = 8): MinimapWee
   for (let i = 0; i < weeks; i += 1) {
     const date = new Date(now);
     date.setDate(date.getDate() - i * 7);
-    const key = isoWeekLabel(date);
+    const key = getWeekLabel(date);
     const val = weekMap.get(key) ?? { captures: 0, signals: 0, pivot: false };
     result.push({
       week: key,

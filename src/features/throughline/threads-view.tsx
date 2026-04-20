@@ -87,15 +87,38 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
 
   const activeThreadKey = activeRow ? threadKey(activeRow.kind, activeRow.id) : null;
 
-  const akhirahThreadKeys = useMemo(() => {
-    if (!data?.rows.length) return new Set<string>();
-    const set = new Set<string>();
+  const { healingThreadKeys, akhirahThreadKeys } = useMemo(() => {
+    if (!data?.rows.length) return { healingThreadKeys: new Set<string>(), akhirahThreadKeys: new Set<string>() };
+
+    // Single O(entries) pass to build both goal and project entry maps.
+    const goalMap = new Map<string, ThroughlineEntry[]>();
+    const projectMap = new Map<string, ThroughlineEntry[]>();
+    const akhirah = new Set<string>();
+
     for (const entry of entries) {
-      if (entry.priority !== "akhirah") continue;
-      for (const gId of (entry.goals ?? [])) set.add(`goal:${gId}`);
-      for (const pId of (entry.projects ?? [])) set.add(`project:${pId}`);
+      for (const gId of (entry.goals ?? [])) {
+        const list = goalMap.get(gId);
+        if (list) list.push(entry); else goalMap.set(gId, [entry]);
+        if (entry.priority === "akhirah") akhirah.add(`goal:${gId}`);
+      }
+      for (const pId of (entry.projects ?? [])) {
+        const list = projectMap.get(pId);
+        if (list) list.push(entry); else projectMap.set(pId, [entry]);
+        if (entry.priority === "akhirah") akhirah.add(`project:${pId}`);
+      }
     }
-    return set;
+
+    const healing = new Set<string>();
+    for (const row of data.rows) {
+      if (!isSilentThread(row)) continue;
+      const rowEntries = (row.kind === "goal" ? goalMap.get(row.id) : projectMap.get(row.id)) ?? [];
+      const recent = rowEntries.slice(0, 10);
+      if (recent.length === 0) continue;
+      const contractedCount = recent.filter((e) => e.stateOfHeart === "contracted").length;
+      if (contractedCount / recent.length > 0.5) healing.add(threadKey(row.kind, row.id));
+    }
+
+    return { healingThreadKeys: healing, akhirahThreadKeys: akhirah };
   }, [data, entries]);
 
   useEffect(() => {
@@ -104,8 +127,8 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
 
   if (isLoading) {
     return (
-      <main className="main">
-        <div className="view-shell">
+      <main className="main main-wide">
+        <div className="view-shell view-shell-wide">
           <div className="view-head">
             <h1>
               Threads are <em>loading</em>.
@@ -118,8 +141,8 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
 
   if (!data || data.rows.length === 0) {
     return (
-      <main className="main">
-        <div className="view-shell">
+      <main className="main main-wide">
+        <div className="view-shell view-shell-wide">
           <div className="view-head">
             <h1>
               No threads <em>yet</em>.
@@ -135,8 +158,8 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
   }
 
   return (
-    <main className="main">
-      <div className="view-shell">
+    <main className="main main-wide">
+      <div className="view-shell view-shell-wide">
         <div className="view-head">
           <h1>
             Your life as <em>lines</em>.
@@ -150,6 +173,7 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
           {data.rows.map((row) => {
             const key = threadKey(row.kind, row.id);
             const silent = isSilentThread(row);
+            const healing = silent && healingThreadKeys.has(key);
             const dimmed = akhirahLens && !akhirahThreadKeys.has(key);
             return (
             <div
@@ -160,7 +184,8 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
               <div className="meta">
                 <div className="kind">
                   {row.kind === "goal" ? "Life goal" : "Project"}
-                  {silent && <span className="thread-quiet-badge" title="No signals in 14+ days — Ṣabr or stagnation?">Quiet</span>}
+                  {healing && <span className="thread-healing-badge" title="Many contracted entries — prioritize spiritual ease">Healing</span>}
+                  {silent && !healing && <span className="thread-quiet-badge" title="No signals in 14+ days — Ṣabr or stagnation?">Quiet</span>}
                 </div>
                 <button
                   className="name-btn"
@@ -219,7 +244,14 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
             </div>
           </div>
 
-          {isSilentThread(activeRow) && (
+          {isSilentThread(activeRow) && healingThreadKeys.has(threadKey(activeRow.kind, activeRow.id)) ? (
+            <div className="sabr-prompt healing">
+              <div className="sabr-prompt-label">Prioritize <em>Inshirāḥ</em></div>
+              <p>
+                More than half of recent entries in this thread were captured in a state of Qabd (contraction). Before pushing for more productivity here, tend to your spiritual ease — <em>Inshirāḥ</em>. Rest, dhikr, or service may open this thread more than effort alone.
+              </p>
+            </div>
+          ) : isSilentThread(activeRow) ? (
             <div className="sabr-prompt">
               <div className="sabr-prompt-label">Ṣabr or stagnation?</div>
               <p>
@@ -228,7 +260,7 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
                 silent before your next weekly review.
               </p>
             </div>
-          )}
+          ) : null}
 
           {activeCapture ? (
             <div className="capture-detail">

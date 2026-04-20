@@ -8,6 +8,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type {
   CreateEntryPayload,
   FeedFilter,
+  HeartState,
   MainView,
   MinimapWeek,
   ThroughlineBootstrap,
@@ -83,16 +84,21 @@ export function ThroughlineHomePage() {
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [composerPreselectedGoalId, setComposerPreselectedGoalId] = useState<string | null>(null);
 
+  const parentOrigin = typeof window !== "undefined"
+    ? (process.env.NEXT_PUBLIC_PARENT_ORIGIN ?? window.location.origin)
+    : "*";
+
   useEffect(() => {
     applyTweaks(tweaks);
     localStorage.setItem("throughline-tweaks", JSON.stringify(tweaks));
     if (editMode) {
-      window.parent?.postMessage({ type: "__edit_mode_set_keys", edits: tweaks }, "*");
+      window.parent?.postMessage({ type: "__edit_mode_set_keys", edits: tweaks }, parentOrigin);
     }
-  }, [tweaks, editMode]);
+  }, [tweaks, editMode, parentOrigin]);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
+      if (event.origin !== parentOrigin) return;
       if (event.data?.type === "__activate_edit_mode") {
         setEditMode(true);
         setTweaksOpen(true);
@@ -103,9 +109,9 @@ export function ThroughlineHomePage() {
       }
     };
     window.addEventListener("message", onMessage);
-    window.parent?.postMessage({ type: "__edit_mode_available" }, "*");
+    window.parent?.postMessage({ type: "__edit_mode_available" }, parentOrigin);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [parentOrigin]);
 
   useEffect(() => {
     let cancelled = false;
@@ -381,6 +387,23 @@ export function ThroughlineHomePage() {
     [entries],
   );
 
+  const patchHeartState = useCallback(async (id: string, state: HeartState) => {
+    const prev = entries.find((e) => e.id === id)?.stateOfHeart;
+    setEntries((list) => list.map((e) => (e.id === id ? { ...e, stateOfHeart: state } : e)));
+    try {
+      const response = await fetch(`/api/entries/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stateOfHeart: state }),
+      });
+      if (!response.ok) {
+        setEntries((list) => list.map((e) => (e.id === id ? { ...e, stateOfHeart: prev } : e)));
+      }
+    } catch {
+      setEntries((list) => list.map((e) => (e.id === id ? { ...e, stateOfHeart: prev } : e)));
+    }
+  }, [entries]);
+
   const onSlotClick = (type: "goal" | "project", id: string) => {
     const source = type === "goal" ? goals.find((goal) => goal.id === id) : projects.find((project) => project.id === id);
     if (!source) return;
@@ -472,9 +495,19 @@ export function ThroughlineHomePage() {
   }, []);
 
   const deleteCommitment = useCallback(async (id: string) => {
+    const snapshot = commitments.find((c) => c.id === id);
     setCommitments((state) => state.filter((c) => c.id !== id));
-    await fetch(`/api/commitments/${id}`, { method: "DELETE" });
-  }, []);
+    try {
+      const response = await fetch(`/api/commitments/${id}`, { method: "DELETE" });
+      if (!response.ok && snapshot) {
+        setCommitments((state) => [...state, snapshot].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)));
+      }
+    } catch {
+      if (snapshot) {
+        setCommitments((state) => [...state, snapshot].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)));
+      }
+    }
+  }, [commitments]);
 
   const filtered = useMemo(() => {
     let list = entries;
@@ -713,12 +746,13 @@ export function ThroughlineHomePage() {
             entries={entries}
             onYearChange={(nextYear) => setTimelineYear(clampYear(nextYear))}
             akhirahLens={tweaks.akhirahLens ?? false}
+            onToggleAkhirahLens={toggleAkhirahLens}
           />
         ) : null}
 
         {view === "review" ? <MuhasabahView /> : null}
 
-        {reviewOpen ? <WeeklyReview entries={entries} onClose={() => setReviewOpen(false)} onApply={applyReview} /> : null}
+        {reviewOpen ? <WeeklyReview entries={entries} onClose={() => setReviewOpen(false)} onApply={applyReview} onPatchHeart={patchHeartState} /> : null}
 
         <GoalProjectComposer
           open={composerOpen}

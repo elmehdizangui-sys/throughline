@@ -1,15 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ThroughlineEntry } from "@/lib/types";
+import type { HeartState, ThroughlineEntry } from "@/lib/types";
 import { CodeBlock, formatDay, formatTime, renderContent } from "@/features/throughline/shared";
+
+const HEART_STATE_LABELS: Record<HeartState, string> = {
+  open: "○ Inshirāḥ",
+  clear: "◇ Ṣafā",
+  clouded: "≈ Ghaflah",
+  contracted: "● Qabd",
+};
 
 export function WeeklyReview({
   entries,
   onClose,
   onApply,
+  onPatchHeart,
 }: {
   entries: ThroughlineEntry[];
   onClose: () => void;
   onApply: (decisions: Record<string, "star" | "archive" | "promote" | "skip">) => void;
+  onPatchHeart?: (id: string, state: HeartState) => void;
 }) {
   const candidates = useMemo(
     () => entries.filter((entry) => !entry.isPivot && !entry.starred && !entry.archived).slice(0, 8),
@@ -17,6 +26,7 @@ export function WeeklyReview({
   );
   const [index, setIndex] = useState(0);
   const [decisions, setDecisions] = useState<Record<string, "star" | "archive" | "promote" | "skip">>({});
+  const [heartStates, setHeartStates] = useState<Record<string, HeartState>>({});
 
   const done = index >= candidates.length;
   const current = candidates[index];
@@ -84,6 +94,27 @@ export function WeeklyReview({
                   {formatDay(current.created_at)} - {formatTime(current.created_at)}
                 </div>
                 <div className="content">{current.isCode ? <CodeBlock content={current.content} /> : renderContent(current.content)}</div>
+                {onPatchHeart && (
+                  <div className="review-heart-states">
+                    <span className="review-heart-label">Hal (state of heart)</span>
+                    <div className="review-heart-btns">
+                      {(Object.entries(HEART_STATE_LABELS) as [HeartState, string][]).map(([state, label]) => (
+                        <button
+                          key={state}
+                          className={`review-heart-btn ${heartStates[current.id] === state ? "on" : ""}`}
+                          onClick={() => {
+                            setHeartStates((prev) => ({ ...prev, [current.id]: state }));
+                            onPatchHeart(current.id, state);
+                          }}
+                          type="button"
+                          aria-pressed={heartStates[current.id] === state}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="choices">
                   <button className="choice star" onClick={() => decide("star")} type="button">
                     <span className="label">★ Signal</span>

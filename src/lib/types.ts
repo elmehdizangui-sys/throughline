@@ -147,6 +147,7 @@ export interface PatchEntryPayload {
   slotKind?: string | null;
   pivotLabel?: string | null;
   priority?: EntryPriority | null;
+  stateOfHeart?: HeartState | null;
 }
 
 export interface CreateGoalPayload {
@@ -278,6 +279,7 @@ export interface MuhasabahThread {
   kind: ThreadKind;
   name: string;
   color?: string;
+  primary_intent?: GoalIntent;
   signals: MuhasabahSignalItem[];
   pivots: MuhasabahSignalItem[];
   akhirahCount: number;

@@ -174,6 +174,7 @@ export function BigLineBar({
                 </div>
                 <div className="slot-text">
                   {goal.name}
+                  {goal.primary_intent === "legacy" && <span className="intent-moon" aria-label="Akhirah goal" title="Akhirah · Legacy intent">☽</span>}
                   {goal.status && goal.status !== "active" && <StatusDot status={goal.status} />}
                 </div>
                 <button
@@ -285,6 +286,7 @@ export function Sidebar({
             <span className="kind">Goal 0{index + 1}</span>
             <span className="t">
               {goal.name}
+              {goal.primary_intent === "legacy" && <span className="intent-moon" aria-label="Akhirah goal" title="Akhirah · Legacy intent">☽</span>}
               {goal.status && goal.status !== "active" && <StatusDot status={goal.status} />}
             </span>
             <button
@@ -430,11 +432,14 @@ export function TweaksPanel({
         <label>Accent</label>
         <div className="hues">
           {accents.map((accent) => (
-            <span
+            <button
               key={accent.id}
               className={`hue ${tweaks.accent === accent.id ? "on" : ""}`}
               style={{ background: accent.color }}
               onClick={() => setTweak("accent", accent.id)}
+              type="button"
+              aria-label={`Set accent to ${accent.id}`}
+              aria-pressed={tweaks.accent === accent.id}
             />
           ))}
         </div>

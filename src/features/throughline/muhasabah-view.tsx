@@ -24,6 +24,21 @@ function AkhirahBar({ fraction }: { fraction: number }) {
   );
 }
 
+function NiyyahDriftPrompt({ thread }: { thread: MuhasabahThread }) {
+  if (thread.kind !== "goal") return null;
+  if (thread.primary_intent !== "legacy") return null;
+  const total = thread.akhirahCount + thread.dunyaCount;
+  if (total === 0 || thread.dunyaCount <= thread.akhirahCount) return null;
+  return (
+    <div className="muhasabah-drift-prompt">
+      <div className="muhasabah-drift-label">Niyyah Drift</div>
+      <p>
+        You intended this goal for Akhirah, but your captured entries lean toward Dunya ({thread.dunyaCount} Dunya vs {thread.akhirahCount} Akhirah). How can you re-tether this work to your legacy intention?
+      </p>
+    </div>
+  );
+}
+
 function ThreadBlock({ thread }: { thread: MuhasabahThread }) {
   const total = thread.signals.length + thread.pivots.length;
   if (total === 0) return null;
@@ -33,11 +48,13 @@ function ThreadBlock({ thread }: { thread: MuhasabahThread }) {
         <span className="muhasabah-thread-dot" style={{ background: thread.color ?? "var(--ink-3)" }} />
         <span className="muhasabah-thread-kind">{thread.kind === "goal" ? "Life goal" : "Project"}</span>
         <span className="muhasabah-thread-name">{thread.name}</span>
+        {thread.primary_intent === "legacy" && <span className="muhasabah-intent-moon" aria-label="Akhirah goal">☽</span>}
         <span className="muhasabah-thread-counts">
           {thread.signals.length} signals · {thread.pivots.length} pivots
           {thread.akhirahCount > 0 && <span className="muhasabah-akhirah-tag">{thread.akhirahCount} Akhirah</span>}
         </span>
       </div>
+      <NiyyahDriftPrompt thread={thread} />
       <div className="muhasabah-signal-list">
         {[...thread.pivots, ...thread.signals].map((item) => (
           <div key={item.id} className={`muhasabah-signal-item ${item.isPivot ? "pivot" : ""} ${item.priority === "akhirah" ? "akhirah" : ""}`}>
