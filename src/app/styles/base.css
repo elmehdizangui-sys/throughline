@@ -38,11 +38,10 @@
 
   /* ── Layout ── */
   --left-col: 240px;
-  --right-col: 260px;
-  --center-w: 820px;
-  --shell-max: 1360px;
+  --right-col: 400px;
+  --center-w: 900px;
   --pad: 24px;
-  --feed-w: 820px;
+  --feed-w: 1100px;
   --radius: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
@@ -91,7 +90,6 @@ a {
 .app-shell {
   display: grid;
   grid-template-columns: var(--left-col) minmax(0, 1fr) var(--right-col);
-  max-width: var(--shell-max);
   margin: 0 auto;
   min-height: 100vh;
   background: var(--paper);
@@ -99,13 +97,14 @@ a {
 }
 
 .center-column {
-  max-width: var(--center-w);
+  max-width: 1100px;
   width: 100%;
   margin: 0 auto;
   padding: 28px 20px 120px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
 }
 
 /* Center column collapses below 1200px — right sidebar stacks under center */
@@ -305,10 +304,11 @@ a {
   display: flex;
   flex-direction: column;
   gap: 28px;
-  padding: 24px 20px;
+  padding: 24px 16px;
   background: var(--paper);
   border-left: 1px solid var(--rule);
   z-index: 10;
+  min-width: 0;
 }
 
 .side-section {
