@@ -3,7 +3,8 @@
   padding: 12px 14px;
   background: var(--accent-soft);
   color: var(--accent-ink);
-  border-radius: 10px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--accent) 20%, transparent);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -19,8 +20,9 @@
   cursor: pointer;
   font-size: 16px;
   line-height: 1;
-  opacity: 0.6;
+  opacity: 0.55;
   padding: 0 4px;
+  transition: opacity 0.12s;
 }
 
 .filter-context .close:hover {
@@ -28,7 +30,7 @@
 }
 
 .entry .meta .priority {
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-strong);
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 10px;
@@ -38,22 +40,22 @@
 
 .entry .meta .priority.dunya {
   background: var(--paper-2);
-  color: var(--ink-3);
+  color: var(--ink-4);
 }
 
 .entry .meta .priority.akhirah {
   background: var(--accent-soft);
   color: var(--accent-ink);
-  border-color: color-mix(in oklab, var(--accent) 28%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 22%, transparent);
 }
 
 .entry .meta .signal {
-  border: 1px solid color-mix(in oklab, var(--star) 28%, transparent);
+  border: 1px solid color-mix(in oklab, var(--star) 25%, transparent);
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: color-mix(in oklab, var(--star) 70%, var(--ink));
+  color: color-mix(in oklab, var(--star) 70%, var(--ink-2));
   background: var(--star-soft);
 }

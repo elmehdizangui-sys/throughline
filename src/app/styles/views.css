@@ -1,3 +1,5 @@
+/* ─── Review done state ───────────────────────────────────────────────────── */
+
 .review-done {
   text-align: center;
   padding: 40px 20px;
@@ -21,7 +23,7 @@
   margin-top: 8px;
   font-family: var(--f-mono);
   font-size: 12px;
-  color: var(--ink-3);
+  color: var(--ink-4);
 }
 
 .review-done .stats strong {
@@ -32,15 +34,17 @@
   font-weight: 500;
 }
 
+/* ─── Tweaks panel ────────────────────────────────────────────────────────── */
+
 .tweaks-panel {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 280px;
+  width: 286px;
   background: var(--card);
   border: 1px solid var(--rule-strong);
-  border-radius: 14px;
-  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-xl);
+  box-shadow: rgba(0, 0, 0, 0.18) 0px 20px 40px -12px;
   padding: 14px;
   z-index: 50;
   font-size: 13px;
@@ -52,7 +56,7 @@
 }
 
 .tweaks-panel h4 {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   font-family: var(--f-mono);
   font-size: 10px;
   letter-spacing: 0.18em;
@@ -70,6 +74,11 @@
   cursor: pointer;
   font-size: 16px;
   padding: 0;
+  transition: color 0.12s;
+}
+
+.tweaks-panel h4 button:hover {
+  color: var(--ink-2);
 }
 
 .tweak-row {
@@ -79,17 +88,20 @@
 .tweak-row > label {
   display: block;
   font-size: 11px;
-  color: var(--ink-3);
+  color: var(--ink-4);
   margin-bottom: 6px;
   font-weight: 500;
+  font-family: var(--f-mono);
+  letter-spacing: 0.06em;
 }
 
 .seg {
   display: flex;
   background: var(--paper-2);
   padding: 2px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   gap: 2px;
+  border: 1px solid var(--rule-strong);
 }
 
 .seg button {
@@ -98,16 +110,21 @@
   border: none;
   padding: 5px 8px;
   font-size: 11px;
-  color: var(--ink-3);
+  color: var(--ink-4);
   cursor: pointer;
   border-radius: 6px;
   font-family: var(--f-body);
+  transition: background 0.12s, color 0.12s;
+}
+
+.seg button:hover {
+  color: var(--ink-2);
 }
 
 .seg button.on {
   background: var(--card);
   color: var(--ink);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 2px;
 }
 
 .hues {
@@ -121,16 +138,18 @@
   border-radius: 50%;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: transform 0.1s;
+  transition: transform 0.1s var(--e);
 }
 
 .hue:hover {
-  transform: scale(1.1);
+  transform: scale(1.12);
 }
 
 .hue.on {
   border-color: var(--ink);
 }
+
+/* ─── Minimap ─────────────────────────────────────────────────────────────── */
 
 .minimap {
   display: none;
@@ -159,6 +178,7 @@
   gap: 6px;
   cursor: pointer;
   padding: 3px 0;
+  transition: color 0.12s;
 }
 
 .minimap .wk .blocks {
@@ -171,15 +191,15 @@
   width: 8px;
   height: 8px;
   border-radius: 2px;
-  background: var(--rule);
+  background: var(--rule-strong);
 }
 
 .minimap .wk .blocks span.l1 {
-  background: color-mix(in oklab, var(--accent) 20%, var(--rule));
+  background: color-mix(in oklab, var(--accent) 20%, var(--rule-strong));
 }
 
 .minimap .wk .blocks span.l2 {
-  background: color-mix(in oklab, var(--accent) 50%, var(--rule));
+  background: color-mix(in oklab, var(--accent) 50%, var(--rule-strong));
 }
 
 .minimap .wk .blocks span.l3 {
@@ -195,14 +215,16 @@
 }
 
 .minimap .wk:hover {
-  color: var(--ink);
+  color: var(--ink-2);
 }
 
 .minimap .title {
   padding-bottom: 8px;
-  border-bottom: 1px dashed var(--rule);
+  border-bottom: 1px solid var(--rule-strong);
   margin-bottom: 6px;
 }
+
+/* ─── Empty state ─────────────────────────────────────────────────────────── */
 
 .empty {
   padding: 40px 0;
@@ -213,15 +235,9 @@
   font-size: 16px;
 }
 
-@media (max-width: 1100px) {
-  html[data-layout="sidebar"] body {
-    padding-left: 0;
-  }
+/* Legacy sidebar layout collapse rules removed */
 
-  html[data-layout="sidebar"] .sidebar {
-    display: none;
-  }
-}
+/* ─── View shell ──────────────────────────────────────────────────────────── */
 
 .view-shell {
   display: flex;
@@ -237,10 +253,10 @@
 .view-head h1 {
   margin: 0;
   font-family: var(--f-display);
-  font-size: 34px;
+  font-size: 32px;
   letter-spacing: -0.02em;
-  font-weight: 400;
-  line-height: 1.15;
+  font-weight: 500;
+  line-height: 1.20;
 }
 
 .view-head h1 em {
@@ -252,9 +268,12 @@
 
 .deck-copy {
   margin: 8px 0 0;
-  color: var(--ink-3);
-  line-height: 1.6;
+  color: var(--ink-4);
+  line-height: 1.60;
+  font-size: 14px;
 }
+
+/* ─── Thread list ─────────────────────────────────────────────────────────── */
 
 .thread-list {
   display: flex;
@@ -263,10 +282,12 @@
 }
 
 .thread-row {
-  border: 1px solid var(--rule);
-  border-radius: 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-lg);
   background: var(--card);
   padding: 14px;
+  box-shadow: rgba(0, 0, 0, 0.03) 0px 4px 24px;
+  transition: border-color 0.15s var(--e);
 }
 
 .thread-row.project {
@@ -274,7 +295,8 @@
 }
 
 .thread-row.active {
-  border-color: var(--rule-strong);
+  border-color: var(--ink-4);
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 4px 24px;
 }
 
 .thread-row .meta .kind {
@@ -292,14 +314,16 @@
 .thread-row .meta .name-btn {
   margin-top: 2px;
   font-family: var(--f-display);
-  font-size: 20px;
-  line-height: 1.15;
+  font-size: 19px;
+  line-height: 1.20;
   border: none;
   background: transparent;
   padding: 0;
   color: var(--ink);
   cursor: pointer;
   text-align: left;
+  font-weight: 500;
+  transition: color 0.12s;
 }
 
 .thread-row .meta .name-btn:hover {
@@ -308,7 +332,7 @@
 
 .thread-row .meta .stats {
   margin-top: 4px;
-  color: var(--ink-3);
+  color: var(--ink-4);
   font-size: 13px;
 }
 
@@ -344,7 +368,7 @@
   width: 10px;
   height: 10px;
   background: var(--star);
-  box-shadow: 0 0 0 3px var(--star-soft);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--star-soft) 70%, transparent);
 }
 
 .thread-row .line .dot.pivot {
@@ -376,11 +400,11 @@
 .thread-row .preview {
   margin-top: 8px;
   padding: 9px 11px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--paper-2);
-  color: var(--ink-2);
+  color: var(--ink-3);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.50;
 }
 
 .thread-row .preview .when {
@@ -393,13 +417,16 @@
   color: var(--ink-4);
 }
 
+/* ─── Thread detail panel ─────────────────────────────────────────────────── */
+
 .thread-detail-panel {
-  border: 1px solid var(--rule);
-  border-radius: 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-lg);
   background: var(--card);
   padding: 16px;
   display: grid;
   gap: 14px;
+  box-shadow: rgba(0, 0, 0, 0.03) 0px 4px 24px;
 }
 
 .thread-detail-panel .head .meta {
@@ -413,23 +440,25 @@
 .thread-detail-panel .head h3 {
   margin: 4px 0 8px;
   font-family: var(--f-display);
-  font-size: 28px;
-  font-weight: 400;
-  line-height: 1.12;
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.15;
 }
 
 .thread-detail-panel .head .stats {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  color: var(--ink-3);
+  color: var(--ink-4);
   font-size: 12px;
   font-family: var(--f-mono);
 }
 
+/* ─── Capture detail ──────────────────────────────────────────────────────── */
+
 .capture-detail {
-  border: 1px dashed var(--rule);
-  border-radius: 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
   padding: 10px 12px;
   display: grid;
   gap: 6px;
@@ -450,13 +479,16 @@
 }
 
 .capture-detail .detail-content {
-  color: var(--ink-2);
+  color: var(--ink-3);
   line-height: 1.55;
 }
 
 .capture-detail.muted {
   color: var(--ink-4);
+  background: var(--paper-2);
 }
+
+/* ─── Signals block ───────────────────────────────────────────────────────── */
 
 .signals-block {
   display: grid;
@@ -477,20 +509,21 @@
 }
 
 .signal-row {
-  border: 1px solid var(--rule);
-  border-radius: 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
   background: var(--paper-2);
-  color: var(--ink-2);
+  color: var(--ink-3);
   padding: 8px 10px;
   display: grid;
   grid-template-columns: 110px 1fr;
   gap: 10px;
   text-align: left;
   cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
 }
 
 .signal-row.active {
-  border-color: var(--rule-strong);
+  border-color: var(--ink-4);
   background: var(--card);
 }
 
@@ -504,7 +537,7 @@
 
 .signal-row .txt {
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.50;
 }
 
 .signal-row .txt.pivot {
@@ -512,15 +545,18 @@
   font-style: italic;
 }
 
+/* ─── Year bars ───────────────────────────────────────────────────────────── */
+
 .year-bars-lite {
   display: flex;
   align-items: flex-end;
   gap: 2px;
   padding: 14px 12px;
-  border: 1px solid var(--rule);
-  border-radius: 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-lg);
   background: var(--card);
   overflow-x: auto;
+  box-shadow: rgba(0, 0, 0, 0.03) 0px 4px 24px;
 }
 
 .year-bars-lite .bar {
@@ -543,8 +579,8 @@
 .year-bars-lite .bar .base {
   display: block;
   border-radius: 2px;
-  background: var(--ink-3);
-  opacity: 0.5;
+  background: var(--ink-4);
+  opacity: 0.4;
 }
 
 .year-bars-lite .bar .sig {
@@ -554,7 +590,7 @@
 }
 
 .year-bars-lite .bar.now .base {
-  opacity: 1;
+  opacity: 0.8;
 }
 
 .year-bars-lite .bar.active .base {
@@ -562,20 +598,22 @@
   background: var(--ink);
 }
 
+/* ─── Ribbon list ─────────────────────────────────────────────────────────── */
+
 .ribbon-list {
   display: grid;
   gap: 6px;
 }
 
 .ribbon-list .ribbon {
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-strong);
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   display: flex;
   justify-content: space-between;
   gap: 8px;
   font-size: 13px;
-  color: var(--ink-2);
+  color: var(--ink-3);
   background: var(--paper-2);
 }
 
@@ -585,6 +623,7 @@
 
 .ribbon-list .ribbon .label {
   font-family: var(--f-display);
+  font-weight: 500;
 }
 
 .ribbon-list .ribbon .range {
@@ -595,6 +634,8 @@
   color: var(--ink-4);
 }
 
+/* ─── Pivot list ──────────────────────────────────────────────────────────── */
+
 .pivot-list {
   display: grid;
   gap: 8px;
@@ -602,8 +643,8 @@
 
 .pivot-item {
   border-left: 2px solid var(--accent);
-  background: var(--paper-2);
-  border-radius: 8px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
   padding: 8px 10px;
   display: grid;
   grid-template-columns: 90px 1fr;
@@ -620,13 +661,15 @@
 
 .pivot-item .txt {
   font-size: 14px;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 
 .empty-inline {
   color: var(--ink-4);
   font-size: 13px;
 }
+
+/* ─── Year navigation ─────────────────────────────────────────────────────── */
 
 .year-nav {
   margin-top: 10px;
@@ -637,16 +680,23 @@
 }
 
 .year-nav button {
-  border: 1px solid var(--rule);
-  border-radius: 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
   background: var(--card);
-  color: var(--ink-2);
+  color: var(--ink-3);
   font-family: var(--f-mono);
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 6px 10px;
   cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.year-nav button:hover {
+  background: var(--paper-2);
+  border-color: var(--ink-4);
+  color: var(--ink-2);
 }
 
 .year-nav span {
@@ -655,16 +705,19 @@
   font-family: var(--f-mono);
   font-size: 11px;
   letter-spacing: 0.14em;
-  color: var(--ink-3);
+  color: var(--ink-4);
 }
 
+/* ─── Week detail ─────────────────────────────────────────────────────────── */
+
 .week-detail {
-  border: 1px solid var(--rule);
-  border-radius: 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-lg);
   background: var(--card);
   padding: 14px;
   display: grid;
   gap: 10px;
+  box-shadow: rgba(0, 0, 0, 0.03) 0px 4px 24px;
 }
 
 .week-detail .head .meta {
@@ -679,8 +732,8 @@
   margin: 4px 0 0;
   font-family: var(--f-display);
   font-size: 24px;
-  font-weight: 400;
-  line-height: 1.2;
+  font-weight: 500;
+  line-height: 1.20;
 }
 
 .week-detail .head h3 em {
@@ -696,6 +749,8 @@
 .timeline-signals .signal-row.static {
   background: var(--paper-2);
 }
+
+/* ─── Responsive: threads & timeline ──────────────────────────────────────── */
 
 @media (max-width: 760px) {
   .thread-row.project {
@@ -778,28 +833,7 @@
   }
 }
 
-/* ─── Mobile: sidebar layout collapses to bottom nav ────────────────────── */
-
-@media (max-width: 640px) {
-  html[data-layout="sidebar"] body {
-    padding-left: 0;
-    padding-bottom: 60px;
-  }
-
-  html[data-layout="sidebar"] .sidebar {
-    display: none;
-  }
-
-  .masthead {
-    position: sticky;
-    top: 0;
-  }
-
-  .bigline-bar {
-    position: sticky;
-    top: 57px;
-  }
-}
+/* Legacy mobile collapse rules removed */
 
 /* ─── Mobile: timeline & threads ─────────────────────────────────────────── */
 

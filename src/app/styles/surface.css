@@ -1,3 +1,5 @@
+/* ─── Feed ───────────────────────────────────────────────────────────────── */
+
 .feed {
   display: flex;
   flex-direction: column;
@@ -14,11 +16,11 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 
 .day-divider > span:last-child {
-  color: var(--ink-3);
+  color: var(--ink-4);
   font-weight: 500;
 }
 
@@ -32,11 +34,13 @@
   background: var(--rule);
 }
 
+/* ─── Pivot ───────────────────────────────────────────────────────────────── */
+
 .pivot {
   margin: 20px 0;
   padding: 14px 18px;
-  background: var(--paper-2);
-  border-radius: 10px;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
   border-left: 2px solid var(--accent);
   display: flex;
   flex-direction: column;
@@ -53,9 +57,9 @@
 
 .pivot .body {
   font-family: var(--f-display);
-  font-size: 16px;
+  font-size: 15px;
   font-style: italic;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 
 .pivot .body .from {
@@ -70,10 +74,12 @@
   font-weight: 500;
 }
 
+/* ─── Entry ───────────────────────────────────────────────────────────────── */
+
 .entry {
   position: relative;
   padding: 16px 18px 14px 68px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   border-left: 2px solid transparent;
   transition: background 0.15s var(--e), border-color 0.15s var(--e), box-shadow 0.15s var(--e);
 }
@@ -87,9 +93,9 @@
   left: 0;
   top: 18px;
   font-family: var(--f-mono);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  color: var(--ink-3);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
   width: 54px;
   text-align: right;
 }
@@ -101,41 +107,43 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--ink-3);
+  background: var(--ink-4);
   transform: translateX(-50%);
 }
 
 .entry.starred {
-  background: color-mix(in oklab, var(--star-soft) 60%, var(--card));
+  background: color-mix(in oklab, var(--star-soft) 55%, var(--card));
   border-left-color: var(--star);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--star) 18%, var(--rule));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--star) 15%, var(--rule));
 }
 
 .entry.starred:hover {
-  background: color-mix(in oklab, var(--star-soft) 70%, var(--card));
+  background: color-mix(in oklab, var(--star-soft) 65%, var(--card));
 }
 
 .entry.starred .dot {
   background: var(--star);
-  box-shadow: 0 0 0 3px var(--star-soft);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--star-soft) 80%, transparent);
 }
 
 .entry.starred .timestamp {
-  color: color-mix(in oklab, var(--star) 40%, var(--ink-2));
+  color: color-mix(in oklab, var(--star) 50%, var(--ink-3));
 }
 
 .entry.archived {
-  opacity: 0.5;
+  opacity: 0.45;
 }
+
+/* ─── Entry meta & content ────────────────────────────────────────────────── */
 
 .entry .meta {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 10px;
-  margin-bottom: 8px;
+  margin-bottom: 7px;
   font-size: 12px;
   font-family: var(--f-mono);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
 }
 
 .entry .meta .tag {
@@ -144,11 +152,11 @@
 }
 
 .entry .meta .tag:hover {
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 
 .entry .meta .goal {
-  color: color-mix(in oklab, var(--accent) 70%, var(--ink));
+  color: var(--accent-ink);
   font-weight: 600;
   cursor: pointer;
 }
@@ -157,18 +165,17 @@
   color: var(--ink-2);
   font-weight: 600;
   cursor: pointer;
-  text-decoration: underline dashed color-mix(in oklab, var(--ink-3) 70%, transparent);
+  text-decoration: underline dashed color-mix(in oklab, var(--ink-4) 60%, transparent);
   text-underline-offset: 3px;
 }
 
 .entry .meta .project:hover {
   color: var(--ink);
-  border-color: var(--ink);
 }
 
 .entry .content {
   font-size: 15.5px;
-  line-height: 1.55;
+  line-height: 1.60;
   color: var(--ink);
   white-space: pre-wrap;
   word-break: break-word;
@@ -201,19 +208,21 @@
 }
 
 .entry .content a {
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: none;
-  border-bottom: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  border-bottom: 1px solid color-mix(in oklab, var(--accent) 35%, transparent);
 }
 
 .entry.starred .content {
   color: var(--ink);
 }
 
+/* ─── Link preview ────────────────────────────────────────────────────────── */
+
 .link-preview {
   margin-top: 10px;
-  border: 1px solid var(--rule);
-  border-radius: 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
   display: grid;
   grid-template-columns: 80px 1fr;
   overflow: hidden;
@@ -245,8 +254,8 @@
 
 .link-preview .txt .d {
   font-size: 12px;
-  color: var(--ink-3);
-  line-height: 1.4;
+  color: var(--ink-4);
+  line-height: 1.45;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -260,19 +269,23 @@
   margin-top: 4px;
 }
 
+/* ─── Code block ──────────────────────────────────────────────────────────── */
+
 .code-block {
   margin-top: 10px;
   padding: 12px 14px;
   background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
   font-family: var(--f-mono);
   font-size: 12.5px;
-  line-height: 1.55;
-  color: var(--ink-2);
+  line-height: 1.60;
+  color: var(--ink-3);
   overflow-x: auto;
   white-space: pre;
 }
+
+/* ─── Entry actions ───────────────────────────────────────────────────────── */
 
 .actions {
   display: flex;
@@ -292,15 +305,16 @@
   border-radius: 6px;
   background: transparent;
   border: none;
-  color: var(--ink-3);
+  color: var(--ink-4);
   cursor: pointer;
   font-family: var(--f-mono);
   letter-spacing: 0.04em;
+  transition: background 0.12s var(--e), color 0.12s var(--e);
 }
 
 .action:hover {
   background: var(--paper-2);
-  color: var(--ink);
+  color: var(--ink-2);
 }
 
 .action.star.on {
@@ -312,9 +326,12 @@
   background: var(--accent-soft);
 }
 
+/* ─── Entry card & line modes ─────────────────────────────────────────────── */
+
 html[data-entry="card"] .entry {
   background: var(--card);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-strong);
+  box-shadow: rgba(0, 0, 0, 0.03) 0px 4px 24px;
   margin-bottom: 8px;
   padding: 16px 18px;
 }
@@ -333,7 +350,7 @@ html[data-entry="card"] .entry .dot {
 
 html[data-entry="card"] .entry:hover {
   background: var(--card);
-  border-color: var(--rule-strong);
+  border-color: var(--ink-4);
 }
 
 html[data-entry="line"] .entry {
@@ -348,147 +365,16 @@ html[data-entry="line"] .day-divider {
   margin: 16px 0 6px;
 }
 
-html[data-layout="sidebar"] .bigline-bar {
-  display: none;
-}
+/* Legacy sidebar rules removed — see base.css for .left-sidebar and .right-sidebar */
 
-html[data-layout="sidebar"] .sidebar {
-  display: flex;
-}
-
-.sidebar {
-  display: none;
-}
-
-html[data-layout="sidebar"] body {
-  padding-left: 280px;
-}
-
-html[data-layout="sidebar"] .masthead-inner,
-html[data-layout="sidebar"] .main {
-  margin-left: 0;
-}
-
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 280px;
-  background: var(--paper-2);
-  border-right: 1px solid var(--rule);
-  padding: 20px;
-  flex-direction: column;
-  gap: 18px;
-  overflow-y: auto;
-  z-index: 25;
-}
-
-.sidebar h3 {
-  font-family: var(--f-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin: 0 0 8px;
-  font-weight: 500;
-}
-
-.sidebar .item {
-  padding: 10px 12px 10px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  transition: background 0.15s var(--e);
-  position: relative;
-  border-left: 3px solid var(--slot-color, transparent);
-}
-
-.sidebar .item:hover {
-  background: var(--paper-3);
-}
-
-.sidebar .item.active {
-  background: var(--accent-soft);
-  border-top: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
-  border-right: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
-  border-bottom: 1px solid color-mix(in oklab, var(--accent) 25%, transparent);
-}
-
-.sidebar .item.active .t {
-  color: var(--accent-ink);
-}
-
-.sidebar .item.active .kind {
-  color: var(--accent-ink);
-  opacity: 0.65;
-}
-
-.sidebar .item .kind {
-  font-family: var(--f-mono);
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.sidebar .item .t {
-  font-family: var(--f-display);
-  font-size: 17px;
-  color: var(--ink);
-  line-height: 1.3;
-  padding-right: 44px;
-}
-
-.sidebar .item .item-edit {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  border: 1px solid var(--rule);
-  border-radius: 999px;
-  background: var(--paper-2);
-  color: var(--ink-3);
-  font-size: 10px;
-  font-family: var(--f-mono);
-  padding: 2px 8px;
-  cursor: pointer;
-}
-
-.sidebar .item .item-edit:hover {
-  color: var(--ink);
-  border-color: var(--rule-strong);
-}
-
-.inline-create {
-  width: 100%;
-  margin-top: 8px;
-  border: 1px dashed var(--rule-strong);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink-3);
-  padding: 10px 12px;
-  text-align: left;
-  font-family: var(--f-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.inline-create:hover {
-  background: var(--paper-3);
-  color: var(--ink);
-}
+/* ─── Modal ───────────────────────────────────────────────────────────────── */
 
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: color-mix(in oklab, var(--ink) 50%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: color-mix(in oklab, var(--ink) 45%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 100;
   display: grid;
   place-items: center;
@@ -496,22 +382,17 @@ html[data-layout="sidebar"] .main {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .modal {
   width: min(720px, 92vw);
   max-height: 88vh;
   background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 18px;
-  box-shadow: 0 40px 80px -24px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-xl);
+  box-shadow: rgba(0, 0, 0, 0.30) 0px 40px 80px -24px;
   display: flex;
   flex-direction: column;
   animation: popIn 0.24s var(--e);
@@ -524,29 +405,30 @@ html[data-layout="sidebar"] .main {
 
 .composer-type-switch {
   display: inline-flex;
-  gap: 4px;
+  gap: 3px;
   padding: 3px;
   border-radius: 999px;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-strong);
   background: var(--paper-2);
 }
 
 .composer-type-switch button {
   border: none;
   background: transparent;
-  color: var(--ink-3);
-  font-size: 12px;
+  color: var(--ink-4);
+  font-size: 11px;
   font-family: var(--f-mono);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   border-radius: 999px;
-  padding: 7px 12px;
+  padding: 6px 12px;
   cursor: pointer;
+  transition: background 0.12s, color 0.12s;
 }
 
 .composer-type-switch button.on {
   background: var(--ink);
-  color: var(--paper);
+  color: var(--card);
 }
 
 .composer-field {
@@ -566,13 +448,20 @@ html[data-layout="sidebar"] .main {
 
 .composer-input {
   width: 100%;
-  border: 1px solid var(--rule);
-  border-radius: 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-lg);
   background: var(--card);
   color: var(--ink);
-  font-size: 18px;
+  font-size: 17px;
   font-family: var(--f-body);
-  padding: 14px 16px;
+  padding: 12px 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.composer-input:focus {
+  outline: none;
+  border-color: #3898ec;
+  box-shadow: #3898ec 0px 0px 0px 1px;
 }
 
 .profile-textarea {
@@ -592,14 +481,14 @@ html[data-layout="sidebar"] .main {
   margin-top: 10px;
   font-family: var(--f-mono);
   font-size: 11px;
-  color: var(--ink-3);
+  color: var(--ink-4);
 }
 
 .profile-error {
-  border: 1px solid color-mix(in oklab, var(--danger) 45%, var(--rule));
+  border: 1px solid color-mix(in oklab, var(--danger) 40%, var(--rule));
   background: var(--danger-soft);
   color: var(--danger);
-  border-radius: 10px;
+  border-radius: var(--radius);
   padding: 10px 12px;
   font-size: 13px;
 }
@@ -611,13 +500,14 @@ html[data-layout="sidebar"] .main {
 }
 
 .goal-pills button {
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-strong);
   border-radius: 999px;
   background: var(--paper-2);
-  color: var(--ink-2);
+  color: var(--ink-3);
   font-size: 12px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   cursor: pointer;
+  transition: all 0.12s var(--e);
 }
 
 .goal-pills button.on {
@@ -651,13 +541,18 @@ html[data-layout="sidebar"] .main {
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
+  transition: transform 0.1s var(--e);
+}
+
+.color-pills button:hover {
+  transform: scale(1.1);
 }
 
 .color-pills button.on {
   border-color: var(--ink);
 }
 
-/* ─── Status choice pills (inside composer-type-switch) ──────────────────── */
+/* ─── Status choice pills ─────────────────────────────────────────────────── */
 
 .status-choice {
   display: inline-flex;
@@ -684,12 +579,14 @@ html[data-layout="sidebar"] .main {
 }
 
 .status-choice.someday .status-choice-dot {
-  background: var(--ink-3);
+  background: var(--ink-4);
 }
 
 .status-choice.on .status-choice-dot {
-  background: var(--paper);
+  background: var(--card);
 }
+
+/* ─── Composer footer ─────────────────────────────────────────────────────── */
 
 .composer-footer {
   border-top: 1px solid var(--rule);
@@ -700,12 +597,20 @@ html[data-layout="sidebar"] .main {
 }
 
 .composer-footer .cancel {
-  border: 1px solid var(--rule);
-  border-radius: 999px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
   background: transparent;
-  color: var(--ink-3);
+  color: var(--ink-4);
   padding: 8px 14px;
   cursor: pointer;
+  font-size: 13px;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.composer-footer .cancel:hover {
+  background: var(--paper-2);
+  color: var(--ink-2);
+  border-color: var(--ink-4);
 }
 
 @keyframes popIn {
@@ -719,6 +624,8 @@ html[data-layout="sidebar"] .main {
     transform: none;
   }
 }
+
+/* ─── Modal head ──────────────────────────────────────────────────────────── */
 
 .modal-head {
   padding: 24px 28px 18px;
@@ -735,7 +642,7 @@ html[data-layout="sidebar"] .main {
   font-weight: 500;
   font-size: 26px;
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 .modal-head h2 em {
@@ -747,30 +654,35 @@ html[data-layout="sidebar"] .main {
 
 .modal-head .sub {
   font-size: 13px;
-  color: var(--ink-3);
+  color: var(--ink-4);
   margin-top: 4px;
+  line-height: 1.5;
 }
 
 .modal-head .close {
   background: transparent;
-  border: 1px solid var(--rule);
-  color: var(--ink-3);
+  border: 1px solid var(--rule-strong);
+  color: var(--ink-4);
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   cursor: pointer;
   font-size: 18px;
   line-height: 1;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
 .modal-head .close:hover {
   background: var(--paper-2);
-  color: var(--ink);
+  border-color: var(--ink-4);
+  color: var(--ink-2);
 }
 
+/* ─── Progress rail ───────────────────────────────────────────────────────── */
+
 .progress-rail {
-  height: 3px;
-  background: var(--rule);
+  height: 2px;
+  background: var(--rule-strong);
   position: relative;
 }
 
@@ -783,6 +695,8 @@ html[data-layout="sidebar"] .main {
   transition: width 0.3s var(--e);
 }
 
+/* ─── Modal body ──────────────────────────────────────────────────────────── */
+
 .modal-body {
   padding: 28px;
   overflow-y: auto;
@@ -791,6 +705,8 @@ html[data-layout="sidebar"] .main {
   flex-direction: column;
   gap: 12px;
 }
+
+/* ─── Weekly review ───────────────────────────────────────────────────────── */
 
 .review-meta {
   display: flex;
@@ -807,8 +723,8 @@ html[data-layout="sidebar"] .main {
 .review-entry {
   padding: 18px 20px;
   background: var(--card);
-  border: 1px solid var(--rule);
-  border-radius: 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -823,9 +739,12 @@ html[data-layout="sidebar"] .main {
 .review-entry .content {
   font-family: var(--f-display);
   font-size: 18px;
-  line-height: 1.45;
+  line-height: 1.50;
   color: var(--ink);
+  font-weight: 400;
 }
+
+/* ─── Heart states ────────────────────────────────────────────────────────── */
 
 .review-heart-states {
   margin-top: 12px;
@@ -838,7 +757,7 @@ html[data-layout="sidebar"] .main {
   font-size: 9px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--ink-4);
   margin-bottom: 6px;
 }
 
@@ -855,7 +774,7 @@ html[data-layout="sidebar"] .main {
   background: transparent;
   font-size: 11px;
   font-family: var(--f-mono);
-  color: var(--ink-3);
+  color: var(--ink-4);
   cursor: pointer;
   transition: all 0.12s var(--e);
 }
@@ -867,10 +786,12 @@ html[data-layout="sidebar"] .main {
 
 .review-heart-btn.on {
   background: var(--accent-soft);
-  border-color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
   color: var(--accent-ink);
   font-weight: 500;
 }
+
+/* ─── Review choices ──────────────────────────────────────────────────────── */
 
 .review-entry .choices {
   display: grid;
@@ -881,9 +802,9 @@ html[data-layout="sidebar"] .main {
 
 .choice {
   padding: 10px 8px;
-  border-radius: 8px;
-  border: 1px solid var(--rule);
-  background: transparent;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule-strong);
+  background: var(--paper-2);
   cursor: pointer;
   text-align: center;
   display: flex;
@@ -892,23 +813,26 @@ html[data-layout="sidebar"] .main {
   align-items: center;
   transition: all 0.15s var(--e);
   font-family: var(--f-body);
+  box-shadow: var(--paper-2) 0px 0px 0px 0px, var(--rule-strong) 0px 0px 0px 1px;
 }
 
 .choice:hover {
-  border-color: var(--ink-3);
-  background: var(--paper-2);
+  border-color: var(--ink-4);
+  background: var(--paper-3);
+  box-shadow: var(--paper-3) 0px 0px 0px 0px, var(--ink-4) 0px 0px 0px 1px;
 }
 
 .choice .label {
   font-size: 12px;
   font-weight: 500;
-  color: var(--ink);
+  color: var(--ink-2);
 }
 
 .choice .k {
   font-family: var(--f-mono);
   font-size: 10px;
   color: var(--ink-4);
+  letter-spacing: 0.1em;
 }
 
 .choice.star:hover {
@@ -925,14 +849,15 @@ html[data-layout="sidebar"] .main {
 /* ─── Commitments widget ─────────────────────────────────────────────────── */
 
 .commitments-widget {
-  border: 1px solid var(--rule);
-  border-radius: 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
   background: var(--card);
   padding: 14px 16px;
   margin: 0 0 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: rgba(0, 0, 0, 0.03) 0px 4px 24px;
 }
 
 .commitments-header {
@@ -943,12 +868,12 @@ html[data-layout="sidebar"] .main {
 }
 
 .commitments-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.09em;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-3);
-  font-family: var(--f-body);
+  color: var(--ink-4);
+  font-family: var(--f-mono);
 }
 
 .commitments-week-date {
@@ -978,7 +903,6 @@ html[data-layout="sidebar"] .main {
   display: flex;
   align-items: center;
   gap: 8px;
-  group: true;
 }
 
 .commitment-check {
@@ -1007,8 +931,8 @@ html[data-layout="sidebar"] .main {
 .commitment-text {
   flex: 1;
   font-size: 14px;
-  line-height: 1.4;
-  color: var(--ink-2);
+  line-height: 1.45;
+  color: var(--ink-3);
   transition: opacity 150ms;
 }
 
@@ -1039,7 +963,7 @@ html[data-layout="sidebar"] .main {
 }
 
 .commitment-delete:hover {
-  color: var(--ink);
+  color: var(--ink-2);
 }
 
 .commitment-add {
@@ -1077,15 +1001,15 @@ html[data-layout="sidebar"] .main {
   border-radius: 6px;
   border: 1px solid var(--rule-strong);
   background: var(--paper-2);
-  color: var(--ink-2);
+  color: var(--ink-3);
   cursor: pointer;
-  transition: background 120ms, border-color 120ms;
+  transition: background 120ms, border-color 120ms, color 120ms;
   white-space: nowrap;
 }
 
 .commitment-submit:hover {
   background: var(--accent-soft);
-  border-color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
   color: var(--accent-ink);
 }
 
@@ -1103,7 +1027,7 @@ html[data-layout="sidebar"] .main {
 }
 
 .entry.akhirah-highlight {
-  box-shadow: inset 3px 0 0 var(--accent), inset 0 0 0 1px color-mix(in oklab, var(--accent) 20%, var(--rule));
+  box-shadow: inset 3px 0 0 var(--accent), inset 0 0 0 1px color-mix(in oklab, var(--accent) 18%, var(--rule));
   background: color-mix(in oklab, var(--accent-soft) 40%, var(--card));
 }
 
@@ -1122,14 +1046,14 @@ html[data-layout="sidebar"] .main {
 .error-boundary-title {
   font-family: var(--f-display);
   font-size: 20px;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--ink);
   margin: 0;
 }
 
 .error-boundary-detail {
   font-size: 13px;
-  color: var(--ink-3);
+  color: var(--ink-4);
   font-family: var(--f-mono);
   margin: 0;
   max-width: 480px;
@@ -1137,18 +1061,19 @@ html[data-layout="sidebar"] .main {
 
 .error-boundary-reset {
   padding: 8px 18px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   border: 1px solid var(--rule-strong);
   background: var(--card);
-  color: var(--ink-2);
+  color: var(--ink-3);
   font-size: 13px;
   cursor: pointer;
   font-family: var(--f-body);
+  transition: all 0.12s var(--e);
 }
 
 .error-boundary-reset:hover {
   background: var(--accent-soft);
-  border-color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
   color: var(--accent-ink);
 }
 
@@ -1167,22 +1092,23 @@ html[data-layout="sidebar"] .main {
   align-items: center;
   gap: 3px;
   padding: 4px;
-  border: 1px solid var(--rule);
-  border-radius: 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius-lg);
   background: var(--paper-2);
 }
 
 .heart-state-toggle button {
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: transparent;
-  color: var(--ink-3);
-  font-family: var(--f-mono);
-  font-size: 12px;
-  letter-spacing: 0.06em;
+  color: var(--ink-2);
+  font-family: var(--f-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   padding: 8px 12px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.1s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .heart-state-toggle button:hover {
@@ -1192,12 +1118,12 @@ html[data-layout="sidebar"] .main {
 
 .heart-state-toggle button.on {
   background: var(--ink);
-  color: var(--paper);
+  color: var(--card);
 }
 
 .heart-state-toggle button.on[data-state="open"] {
   background: var(--accent);
-  color: var(--paper);
+  color: var(--card);
 }
 
 .heart-state-toggle button.on[data-state="clear"] {
@@ -1206,13 +1132,13 @@ html[data-layout="sidebar"] .main {
 }
 
 .heart-state-toggle button.on[data-state="clouded"] {
-  background: var(--ink-3);
-  color: var(--paper);
+  background: var(--ink-4);
+  color: var(--card);
 }
 
 .heart-state-toggle button.on[data-state="contracted"] {
   background: var(--ink);
-  color: var(--paper);
+  color: var(--card);
 }
 
 /* ─── Internal Audit Panel ───────────────────────────────────────────────── */
@@ -1221,17 +1147,17 @@ html[data-layout="sidebar"] .main {
   margin-top: 12px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  padding: 14px 16px;
-  border-radius: var(--radius);
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
+  gap: 20px;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  border: 1px solid var(--rule-strong);
   transition: box-shadow 0.25s var(--e), border-color 0.25s var(--e);
 }
 
 .internal-audit-panel.akhirah-active {
-  border-color: color-mix(in oklab, var(--accent) 40%, var(--rule));
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 10%, transparent), inset 0 0 20px color-mix(in oklab, var(--accent) 5%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 35%, var(--rule-strong));
+  box-shadow: var(--accent-soft) 0px 0px 0px 0px, color-mix(in oklab, var(--accent) 12%, transparent) 0px 0px 0px 1px;
 }
 
 @media (max-width: 640px) {
@@ -1250,14 +1176,14 @@ html[data-layout="sidebar"] .main {
 .audit-label {
   font-family: var(--f-mono);
   font-size: 11px;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-4);
-  font-weight: 500;
+  color: var(--ink-3);
+  font-weight: 600;
 }
 
 .internal-audit-panel .capture-intention-toggle {
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   width: 100%;
   justify-content: stretch;
 }
@@ -1276,7 +1202,7 @@ html[data-layout="sidebar"] .main {
   flex: 1;
   text-align: center;
   font-size: 11px;
-  padding: 8px 6px;
+  padding: 7px 5px;
 }
 
 /* ─── Sabr / stagnation detection ────────────────────────────────────────── */
@@ -1323,7 +1249,7 @@ html[data-layout="sidebar"] .main {
 .sabr-prompt {
   margin-bottom: 16px;
   padding: 14px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--star-soft);
   border: 1px solid oklch(0.82 0.08 70);
 }
@@ -1340,8 +1266,8 @@ html[data-layout="sidebar"] .main {
 
 .sabr-prompt p {
   font-size: 13px;
-  line-height: 1.6;
-  color: var(--ink-2);
+  line-height: 1.60;
+  color: var(--ink-3);
   margin: 0;
 }
 
@@ -1384,26 +1310,29 @@ html[data-layout="sidebar"] .main {
   gap: 6px;
   padding: 10px 14px;
   border: 1px solid var(--rule-strong);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--paper-2);
-  color: var(--ink-3);
+  color: var(--ink-4);
   font-family: var(--f-mono);
   font-size: 11px;
   letter-spacing: 0.08em;
   cursor: pointer;
   transition: all 0.12s var(--e);
+  box-shadow: var(--paper-2) 0px 0px 0px 0px, var(--rule-strong) 0px 0px 0px 1px;
 }
 
 .composer-intent button:hover {
-  border-color: var(--accent);
-  color: var(--ink);
+  border-color: var(--ink-4);
+  color: var(--ink-2);
+  box-shadow: var(--paper-2) 0px 0px 0px 0px, var(--ink-4) 0px 0px 0px 1px;
 }
 
 .composer-intent button.on {
   background: var(--accent-soft);
-  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 40%, transparent);
   color: var(--accent-ink);
   font-weight: 500;
+  box-shadow: var(--accent-soft) 0px 0px 0px 0px, color-mix(in oklab, var(--accent) 30%, transparent) 0px 0px 0px 1px;
 }
 
 .intent-icon {
@@ -1439,9 +1368,9 @@ html[data-layout="sidebar"] .main {
 .muhasabah-period button {
   padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-strong);
   background: transparent;
-  color: var(--ink-3);
+  color: var(--ink-4);
   font-family: var(--f-mono);
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -1450,12 +1379,13 @@ html[data-layout="sidebar"] .main {
 }
 
 .muhasabah-period button:hover {
-  color: var(--ink);
+  color: var(--ink-2);
+  background: var(--paper-2);
 }
 
 .muhasabah-period button.on {
   background: var(--ink);
-  color: var(--paper);
+  color: var(--card);
   border-color: var(--ink);
 }
 
@@ -1470,8 +1400,9 @@ html[data-layout="sidebar"] .main {
   flex: 0 0 auto;
   padding: 16px 20px;
   background: var(--card);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-strong);
   border-radius: var(--radius);
+  box-shadow: rgba(0, 0, 0, 0.03) 0px 4px 24px;
 }
 
 .muhasabah-stat.wide {
@@ -1482,7 +1413,7 @@ html[data-layout="sidebar"] .main {
 .muhasabah-stat-n {
   font-family: var(--f-display);
   font-size: 40px;
-  font-weight: 400;
+  font-weight: 500;
   letter-spacing: -0.03em;
   color: var(--ink);
   line-height: 1;
@@ -1494,7 +1425,7 @@ html[data-layout="sidebar"] .main {
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--ink-4);
   margin-top: 4px;
 }
 
@@ -1507,7 +1438,7 @@ html[data-layout="sidebar"] .main {
 
 .muhasabah-bar {
   flex: 1;
-  height: 6px;
+  height: 5px;
   background: var(--paper-3);
   border-radius: 999px;
   overflow: hidden;
@@ -1535,9 +1466,10 @@ html[data-layout="sidebar"] .main {
 
 .muhasabah-thread {
   background: var(--card);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-strong);
   border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: rgba(0, 0, 0, 0.03) 0px 4px 24px;
 }
 
 .muhasabah-thread-head {
@@ -1575,7 +1507,7 @@ html[data-layout="sidebar"] .main {
 .muhasabah-thread-counts {
   font-family: var(--f-mono);
   font-size: 11px;
-  color: var(--ink-3);
+  color: var(--ink-4);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1584,7 +1516,7 @@ html[data-layout="sidebar"] .main {
 .muhasabah-akhirah-tag {
   background: var(--accent-soft);
   color: var(--accent-ink);
-  border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, transparent);
   border-radius: 999px;
   padding: 1px 7px;
   font-size: 10px;
@@ -1613,7 +1545,7 @@ html[data-layout="sidebar"] .main {
 }
 
 .muhasabah-signal-item.akhirah {
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--accent);
 }
 
 .muhasabah-signal-item .when {
@@ -1627,8 +1559,8 @@ html[data-layout="sidebar"] .main {
 
 .muhasabah-signal-item .txt {
   flex: 1;
-  color: var(--ink-2);
-  line-height: 1.5;
+  color: var(--ink-3);
+  line-height: 1.55;
 }
 
 .muhasabah-signal-item .priority-tag {
@@ -1648,16 +1580,16 @@ html[data-layout="sidebar"] .main {
 
 .muhasabah-signal-item .priority-tag.dunya {
   background: var(--paper-3);
-  color: var(--ink-3);
+  color: var(--ink-4);
 }
 
 .muhasabah-reflection {
   margin-top: 28px;
   padding: 18px 20px;
   background: var(--card);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-strong);
   border-radius: var(--radius);
-  border-left: 3px solid var(--accent);
+  border-left: 2px solid var(--accent);
 }
 
 .muhasabah-reflection-label {
@@ -1673,16 +1605,16 @@ html[data-layout="sidebar"] .main {
 .muhasabah-reflection p {
   font-size: 14px;
   line-height: 1.65;
-  color: var(--ink-2);
+  color: var(--ink-3);
   margin: 0;
 }
 
 .muhasabah-drift-prompt {
   margin: 10px 0 14px;
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: oklch(0.95 0.03 40);
-  border: 1px solid oklch(0.82 0.07 40);
+  border: 1px solid oklch(0.85 0.06 40);
 }
 
 .muhasabah-drift-label {
@@ -1690,7 +1622,7 @@ html[data-layout="sidebar"] .main {
   font-size: 9px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: oklch(0.45 0.1 40);
+  color: oklch(0.42 0.10 40);
   margin-bottom: 5px;
   font-weight: 500;
 }
@@ -1698,7 +1630,7 @@ html[data-layout="sidebar"] .main {
 .muhasabah-drift-prompt p {
   font-size: 13px;
   line-height: 1.55;
-  color: var(--ink-2);
+  color: var(--ink-3);
   margin: 0;
 }
 
