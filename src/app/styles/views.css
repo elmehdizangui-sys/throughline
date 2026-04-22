@@ -953,3 +953,44 @@
   color: var(--ink-4);
   border: 1px solid var(--rule-strong);
 }
+
+/* ─── Composer buttons ───────────────────────────────────────────────────── */
+
+.cancel-btn {
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  color: var(--ink-4);
+  font-family: var(--f-display);
+  font-size: 14px;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.12s var(--e);
+}
+
+.cancel-btn:hover {
+  background: var(--paper-2);
+  color: var(--ink-2);
+}
+
+.save-btn {
+  background: var(--accent);
+  color: var(--card);
+  border: 1px solid var(--accent);
+  font-family: var(--f-display);
+  font-size: 14px;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.12s var(--e);
+}
+
+.save-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -122,20 +122,20 @@ function Entry({
     : "";
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingContent, setEditingContent] = useState("");
 
-  const saveEdit = useCallback(async (id: string) => {
-    const response = await fetch(`/api/entries/${id}`, {
+  const onUpdate = useCallback(async (payload: CreateEntryPayload) => {
+    if (!editingId) return;
+    const response = await fetch(`/api/entries/${editingId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: editingContent }),
+      body: JSON.stringify(payload),
     });
     if (response.ok) {
       const updatedEntry = await response.json();
       onUpdateEntry(updatedEntry);
       setEditingId(null);
     }
-  }, [editingContent, onUpdateEntry]);
+  }, [editingId, onUpdateEntry]);
 
   return (
     <article className={`entry ${entry.starred ? "starred" : ""}${entry.archived ? " archived" : ""}${lensClass ? ` ${lensClass}` : ""}`}>
@@ -181,7 +181,13 @@ function Entry({
       )}
       <div className="content">
         {editingId === entry.id ? (
-          <textarea className="capture-editor-fallback" value={editingContent} onChange={(e) => setEditingContent(e.target.value)} />
+          <Capture 
+            goals={goals} 
+            projects={projects} 
+            onAdd={onUpdate} 
+            initialEntry={entry} 
+            onCancel={() => setEditingId(null)}
+          />
         ) : entry.isCode ? (
           <CodeBlock content={entry.content} />
         ) : (
@@ -189,14 +195,9 @@ function Entry({
         )}
       </div>
       <div className="actions">
-        {editingId === entry.id ? (
+        {editingId !== entry.id && (
           <>
-            <button className="action" onClick={() => saveEdit(entry.id)} type="button">Save</button>
-            <button className="action" onClick={() => setEditingId(null)} type="button">Cancel</button>
-          </>
-        ) : (
-          <>
-            <button className="action" onClick={() => { setEditingId(entry.id); setEditingContent(getEntryPlainText(entry.content)); }} type="button">Edit</button>
+            <button className="action" onClick={() => setEditingId(entry.id)} type="button">Edit</button>
             <button className={`action star ${entry.starred ? "on" : ""}`} onClick={() => onStar(entry.id)} type="button">
               <Icon.Star filled={entry.starred} /> {entry.starred ? "Starred" : "Star"}
             </button>
@@ -258,24 +259,28 @@ function Capture({
   goals,
   projects,
   onAdd,
+  onCancel,
+  initialEntry,
   akhirahLens,
 }: {
   goals: ThroughlineGoal[];
   projects: ThroughlineProject[];
   onAdd: (payload: CreateEntryPayload) => void;
+  onCancel?: () => void;
+  initialEntry?: ThroughlineEntry;
   akhirahLens?: boolean;
 }) {
   const [blockNoteView, setBlockNoteView] = useState<ComponentType<BlockNoteRuntimeViewProps> | null>(null);
   const [editor, setEditor] = useState<BlockNoteRuntimeEditor | null>(null);
-  const [markdownValue, setMarkdownValue] = useState("");
-  const [htmlValue, setHtmlValue] = useState("");
-  const [focused, setFocused] = useState(false);
+  const [markdownValue, setMarkdownValue] = useState(initialEntry ? getEntryPlainText(initialEntry.content) : "");
+  const [htmlValue, setHtmlValue] = useState(initialEntry && initialEntry.content.startsWith("blocknote:v1:") ? JSON.parse(initialEntry.content.slice(13)).html : "");
+  const [focused, setFocused] = useState(true);
   const [picker, setPicker] = useState(false);
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
-  const [isCode, setIsCode] = useState(false);
-  const [priority, setPriority] = useState<EntryPriority | null>(null);
-  const [stateOfHeart, setStateOfHeart] = useState<HeartState | null>(null);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>(initialEntry?.goals ?? []);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(initialEntry?.projects ?? []);
+  const [isCode, setIsCode] = useState(initialEntry?.isCode ?? false);
+  const [priority, setPriority] = useState<EntryPriority | null>(initialEntry?.priority ?? null);
+  const [stateOfHeart, setStateOfHeart] = useState<HeartState | null>(initialEntry?.stateOfHeart ?? null);
 
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const fallbackInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -292,9 +297,14 @@ function Capture({
         const [{ BlockNoteView }, { BlockNoteEditor }] = await Promise.all([import("@blocknote/mantine"), import("@blocknote/core")]);
         if (cancelled) return;
         const nextEditor = BlockNoteEditor.create() as unknown as BlockNoteRuntimeEditor;
-        const preloadedMarkdown = markdownRef.current.trim();
-        if (preloadedMarkdown) {
-          const blocks = nextEditor.tryParseMarkdownToBlocks(preloadedMarkdown);
+        let contentToLoad = markdownValue.trim();
+        if (initialEntry && initialEntry.content.startsWith("blocknote:v1:")) {
+          try {
+            contentToLoad = JSON.parse(initialEntry.content.slice(13)).markdown;
+          } catch {}
+        }
+        if (contentToLoad) {
+          const blocks = nextEditor.tryParseMarkdownToBlocks(contentToLoad);
           nextEditor.replaceBlocks(nextEditor.document, blocks as Array<{ type: string; content?: string }>);
         }
         setBlockNoteView(() => BlockNoteView as unknown as ComponentType<BlockNoteRuntimeViewProps>);
@@ -343,7 +353,11 @@ function Capture({
     return () => document.removeEventListener("mousedown", closeOutside);
   }, [picker]);
 
-  const tags = useMemo(() => extractTags(markdownValue), [markdownValue]);
+  const tags = useMemo(() => {
+    const extracted = extractTags(markdownValue);
+    // If the entry was initialized with tags, include them, though they might change as user edits
+    return Array.from(new Set([...(initialEntry?.tags ?? []), ...extracted]));
+  }, [markdownValue, initialEntry?.tags]);
   const selectedCount = selectedGoals.length + selectedProjects.length;
   const link = useMemo(() => firstLinkFromText(markdownValue), [markdownValue]);
 
@@ -592,8 +606,13 @@ function Capture({
           <span className="hint">
             <span className="kbd">⌘K</span> to focus - <span className="kbd">⌘↵</span> to save
           </span>
+          {onCancel && (
+            <button className="cancel-btn" onClick={onCancel} type="button">
+              Cancel
+            </button>
+          )}
           <button className="save-btn" disabled={!markdownValue.trim()} onClick={submit} type="button">
-            Save
+            {initialEntry ? "Update" : "Save"}
           </button>
         </div>
       </div>
