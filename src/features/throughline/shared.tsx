@@ -180,13 +180,26 @@ export function getEntryPlainText(content: string) {
   return rich ? rich.markdown : content;
 }
 
+function sanitizeRichHtmlRegex(html: string) {
+  let clean = html;
+  clean = clean.replace(/<(script|style|iframe|object|embed|link|meta)\b[^>]*>[\s\S]*?<\/\1>/gi, "");
+  clean = clean.replace(/<(script|style|iframe|object|embed|link|meta)\b[^>]*\/?>/gi, "");
+  clean = clean.replace(/\s+on[a-z]+\s*=\s*"[^"]*"/gi, "");
+  clean = clean.replace(/\s+on[a-z]+\s*=\s*'[^']*'/gi, "");
+  clean = clean.replace(/\s+on[a-z]+\s*=\s*[^\s"'>]+/gi, "");
+  clean = clean.replace(/\s+(href|src)\s*=\s*"\s*javascript:[^"]*"/gi, "");
+  clean = clean.replace(/\s+(href|src)\s*=\s*'\s*javascript:[^']*'/gi, "");
+  clean = clean.replace(/\s+style\s*=\s*"[^"]*"/gi, "");
+  clean = clean.replace(/\s+style\s*=\s*'[^']*'/gi, "");
+  return clean;
+}
+
 function sanitizeRichHtml(html: string) {
   if (!html.trim()) return "";
   if (typeof window === "undefined" || typeof DOMParser === "undefined") {
-    // SSR: return empty — the component is client-rendered, so this will
-    // be replaced by the full sanitizer on hydration. Returning html
-    // here would bypass event-handler and javascript: removal.
-    return "";
+    // SSR: use a regex-based sanitizer so server-rendered output is not blank
+    // and hydration produces the same markup as the client.
+    return sanitizeRichHtmlRegex(html);
   }
 
   const parser = new DOMParser();
