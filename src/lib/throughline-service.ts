@@ -325,11 +325,11 @@ export async function createEntry(payload: CreateEntryPayload, userId?: string):
     to_text: record.to,
     slot_kind: record.slotKind,
     pivot_label: record.pivotLabel,
+    priority: record.priority,
+    state_of_heart: record.stateOfHeart,
     starred: false,
     archived: false,
   };
-  if (record.priority) insertPayload.priority = record.priority;
-  if (record.stateOfHeart) insertPayload.state_of_heart = record.stateOfHeart;
   if (userId) insertPayload.user_id = userId;
 
   let { data, error } = await supabase
@@ -349,6 +349,7 @@ export async function createEntry(payload: CreateEntryPayload, userId?: string):
 
 export async function patchEntry(entryId: string, patch: PatchEntryPayload, userId?: string): Promise<ThroughlineEntry | null> {
   const updatePayload: Record<string, boolean | string | null> = {};
+  if (typeof patch.content === "string") updatePayload.content = patch.content;
   if (typeof patch.starred === "boolean") updatePayload.starred = patch.starred;
   if (typeof patch.archived === "boolean") updatePayload.archived = patch.archived;
   if (typeof patch.signal === "boolean") updatePayload.signal = patch.signal;
@@ -834,6 +835,19 @@ export async function getMuhasabahReport(rawMonths = 1): Promise<MuhasabahReport
     tags: entry.tags ?? [],
   });
 
+  const heartStateCounts: Record<HeartState, number> = {
+    open: 0,
+    clear: 0,
+    clouded: 0,
+    contracted: 0,
+  };
+
+  for (const entry of entries) {
+    if (entry.stateOfHeart) {
+      heartStateCounts[entry.stateOfHeart]++;
+    }
+  }
+
   // Build O(entries) index maps to avoid O(goals × entries) + O(projects × entries) filter loops.
   const goalEntryMap = new Map<string, ThroughlineEntry[]>();
   const projectEntryMap = new Map<string, ThroughlineEntry[]>();
@@ -880,5 +894,6 @@ export async function getMuhasabahReport(rawMonths = 1): Promise<MuhasabahReport
     totalSignals,
     totalPivots,
     akhirahFraction: total > 0 ? totalAkhirah / total : 0,
+    heartStateCounts,
   };
 }

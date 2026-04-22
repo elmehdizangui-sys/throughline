@@ -24,6 +24,38 @@ function AkhirahBar({ fraction }: { fraction: number }) {
   );
 }
 
+const HEART_STATE_LABELS: Record<HeartState, string> = {
+  open: "○ Inshirāḥ",
+  clear: "◇ Ṣafā",
+  clouded: "≈ Ghaflah",
+  contracted: "● Qabd",
+};
+
+function HeartStateSummary({ counts }: { counts: Record<HeartState, number> }) {
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  if (total === 0) return null;
+
+  return (
+    <div className="muhasabah-heart-summary">
+      <div className="muhasabah-heart-label">Ḥāl (Heart State) distribution</div>
+      <div className="muhasabah-heart-grid">
+        {(Object.entries(counts) as [HeartState, number][]).map(([state, count]) => {
+          const pct = Math.round((count / total) * 100);
+          return (
+            <div key={state} className={`muhasabah-heart-stat ${state}`}>
+              <div className="muhasabah-heart-icon">{HEART_STATE_LABELS[state]}</div>
+              <div className="muhasabah-heart-bar-bg">
+                <div className="muhasabah-heart-bar-fill" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="muhasabah-heart-pct">{pct}%</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function NiyyahDriftPrompt({ thread }: { thread: MuhasabahThread }) {
   if (thread.kind !== "goal") return null;
   if (thread.primary_intent !== "legacy") return null;
@@ -161,6 +193,8 @@ export function MuhasabahView() {
                 <div className="muhasabah-stat-l">of your signals are for the Akhirah</div>
               </div>
             </div>
+
+            <HeartStateSummary counts={report.heartStateCounts} />
 
             {report.threads.length === 0 ? (
               <div className="capture-detail muted">

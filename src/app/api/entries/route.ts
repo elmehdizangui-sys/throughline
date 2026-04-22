@@ -7,6 +7,10 @@ function isValidPriority(value: unknown): value is CreateEntryPayload["priority"
   return value === undefined || value === "dunya" || value === "akhirah";
 }
 
+function isValidHeartState(value: unknown): value is CreateEntryPayload["stateOfHeart"] {
+  return value === undefined || value === "open" || value === "clear" || value === "clouded" || value === "contracted";
+}
+
 function parseLink(value: unknown): ThroughlineLink | undefined {
   if (value == null) return undefined;
   if (typeof value !== "object") return undefined;
@@ -32,6 +36,9 @@ export async function POST(request: Request) {
     if (!isValidPriority(payload.priority)) {
       return NextResponse.json({ message: "Priority must be either 'dunya' or 'akhirah'." }, { status: 400 });
     }
+    if (!isValidHeartState(payload.stateOfHeart)) {
+      return NextResponse.json({ message: "Invalid state of heart." }, { status: 400 });
+    }
     if (payload.link !== undefined && !parseLink(payload.link)) {
       return NextResponse.json({ message: "Invalid link payload." }, { status: 400 });
     }
@@ -51,6 +58,7 @@ export async function POST(request: Request) {
         slotKind: typeof payload.slotKind === "string" ? payload.slotKind : undefined,
         pivotLabel: payload.pivotLabel,
         priority: payload.priority,
+        stateOfHeart: payload.stateOfHeart,
       },
       user.id,
     );

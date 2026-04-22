@@ -667,9 +667,9 @@ export function ThroughlineHomePage() {
               onToggleStar={toggleStar}
               onTogglePromote={togglePromote}
               onMarkPivot={markAsPivot}
+              onUpdateEntry={(entry) => setEntries((e) => e.map((x) => (x.id === entry.id ? entry : x)))}
               akhirahLens={akhirahLens}
-            />
-          ) : null}
+            />          ) : null}
 
           {view === "threads" ? (
             <ThreadsView data={threadsData} isLoading={threadsLoading} entries={entries} akhirahLens={akhirahLens} />

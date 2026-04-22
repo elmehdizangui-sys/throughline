@@ -295,4 +295,6 @@ export interface MuhasabahReport {
   totalPivots: number;
   /** Fraction 0–1 of signals/pivots tagged as akhirah. */
   akhirahFraction: number;
+  /** Distribution of heart states across all signals/pivots in this period. */
+  heartStateCounts: Record<HeartState, number>;
 }

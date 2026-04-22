@@ -17,6 +17,7 @@ function isValidHeartState(value: unknown): boolean {
 
 function hasSupportedPatchField(patch: PatchEntryPayload) {
   return (
+    patch.content !== undefined ||
     patch.starred !== undefined ||
     patch.archived !== undefined ||
     patch.signal !== undefined ||
@@ -42,6 +43,9 @@ export async function PATCH(request: Request, { params }: Params) {
     }
     if (!isValidHeartState(body.stateOfHeart)) {
       return NextResponse.json({ message: "stateOfHeart must be one of: open, clear, clouded, contracted." }, { status: 400 });
+    }
+    if (body.content !== undefined && typeof body.content !== "string") {
+      return NextResponse.json({ message: "Content must be a string." }, { status: 400 });
     }
     if (!hasSupportedPatchField(body)) {
       return NextResponse.json({ message: "No valid fields to update." }, { status: 400 });

@@ -92,7 +92,7 @@ function Entry({
   onStar,
   onPromote,
   onMarkPivot,
-  onFilter,
+  onUpdateEntry,
   akhirahLens,
 }: {
   entry: ThroughlineEntry;
@@ -101,6 +101,7 @@ function Entry({
   onStar: (id: string) => void;
   onPromote: (id: string) => void;
   onMarkPivot: (id: string) => void;
+  onUpdateEntry: (entry: ThroughlineEntry) => void;
   onFilter: (filter: ThroughlineContextFilter) => void;
   akhirahLens?: boolean;
 }) {
@@ -120,6 +121,22 @@ function Entry({
         : ""
     : "";
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
+
+  const saveEdit = useCallback(async (id: string) => {
+    const response = await fetch(`/api/entries/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: editingContent }),
+    });
+    if (response.ok) {
+      const updatedEntry = await response.json();
+      onUpdateEntry(updatedEntry);
+      setEditingId(null);
+    }
+  }, [editingContent, onUpdateEntry]);
+
   return (
     <article className={`entry ${entry.starred ? "starred" : ""}${entry.archived ? " archived" : ""}${lensClass ? ` ${lensClass}` : ""}`}>
       <span className="timestamp">{formatTime(entry.created_at)}</span>
@@ -128,6 +145,17 @@ function Entry({
         <div className="meta">
           {entry.priority ? (
             <span className={`priority ${entry.priority}`}>{entry.priority === "akhirah" ? "Akhirah - Legacy" : "Dunya - Immediate"}</span>
+          ) : null}
+          {entry.stateOfHeart ? (
+            <span className={`heart-state ${entry.stateOfHeart}`} title={
+              entry.stateOfHeart === "open" ? "Inshirāḥ — expansive" :
+              entry.stateOfHeart === "clear" ? "Ṣafā — clear" :
+              entry.stateOfHeart === "clouded" ? "Ghaflah — distracted" : "Qabd — contracted"
+            }>
+              {entry.stateOfHeart === "open" ? "○ Inshirāḥ" :
+               entry.stateOfHeart === "clear" ? "◇ Ṣafā" :
+               entry.stateOfHeart === "clouded" ? "≈ Ghaflah" : "● Qabd"}
+            </span>
           ) : null}
           {entry.signal ? <span className="signal">Signal</span> : null}
           {goalObjects.map((goal) => (
@@ -152,34 +180,34 @@ function Entry({
         </div>
       )}
       <div className="content">
-        {entry.isCode ? <CodeBlock content={entry.content} /> : renderContent(entry.content)}
-        {entry.link ? (
-          <div className="link-preview">
-            <div className="thumb" aria-hidden="true">link.preview</div>
-            <div className="txt">
-              <div className="h">{entry.link.title}</div>
-              {entry.link.desc ? <div className="d">{entry.link.desc}</div> : null}
-              <div className="u">{entry.link.url}</div>
-            </div>
-          </div>
-        ) : null}
+        {editingId === entry.id ? (
+          <textarea className="capture-editor-fallback" value={editingContent} onChange={(e) => setEditingContent(e.target.value)} />
+        ) : entry.isCode ? (
+          <CodeBlock content={entry.content} />
+        ) : (
+          renderContent(entry.content)
+        )}
       </div>
       <div className="actions">
-        <button className={`action star ${entry.starred ? "on" : ""}`} onClick={() => onStar(entry.id)} type="button">
-          <Icon.Star filled={entry.starred} /> {entry.starred ? "Starred" : "Star"}
-        </button>
-        <button className={`action promote ${entry.signal ? "on" : ""}`} onClick={() => onPromote(entry.id)} type="button">
-          {entry.signal ? "Promoted" : "Promote ↑"}
-        </button>
-        <button className="action" onClick={() => onMarkPivot(entry.id)} type="button">
-          Mark as pivot
-        </button>
-        <button className="action" type="button">
-          Reply
-        </button>
-        <button className="action" type="button">
-          Copy
-        </button>
+        {editingId === entry.id ? (
+          <>
+            <button className="action" onClick={() => saveEdit(entry.id)} type="button">Save</button>
+            <button className="action" onClick={() => setEditingId(null)} type="button">Cancel</button>
+          </>
+        ) : (
+          <>
+            <button className="action" onClick={() => { setEditingId(entry.id); setEditingContent(getEntryPlainText(entry.content)); }} type="button">Edit</button>
+            <button className={`action star ${entry.starred ? "on" : ""}`} onClick={() => onStar(entry.id)} type="button">
+              <Icon.Star filled={entry.starred} /> {entry.starred ? "Starred" : "Star"}
+            </button>
+            <button className={`action promote ${entry.signal ? "on" : ""}`} onClick={() => onPromote(entry.id)} type="button">
+              {entry.signal ? "Promoted" : "Promote ↑"}
+            </button>
+            <button className="action" onClick={() => onMarkPivot(entry.id)} type="button">
+              Mark as pivot
+            </button>
+          </>
+        )}
       </div>
     </article>
   );
@@ -590,6 +618,7 @@ interface FeedViewProps {
   onToggleStar: (entryId: string) => void;
   onTogglePromote: (entryId: string) => void;
   onMarkPivot: (entryId: string) => void;
+  onUpdateEntry: (entry: ThroughlineEntry) => void;
   akhirahLens?: boolean;
 }
 
@@ -610,6 +639,7 @@ export function FeedView({
   onToggleStar,
   onTogglePromote,
   onMarkPivot,
+  onUpdateEntry,
   akhirahLens,
 }: FeedViewProps) {
   const trimmedGreetingName = greetingName?.trim();
@@ -667,6 +697,7 @@ export function FeedView({
                   onStar={onToggleStar}
                   onPromote={onTogglePromote}
                   onMarkPivot={onMarkPivot}
+                  onUpdateEntry={onUpdateEntry}
                   onFilter={onSetContextFilter}
                   akhirahLens={akhirahLens}
                 />
