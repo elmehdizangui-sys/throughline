@@ -50,7 +50,6 @@ export interface ThreadsViewProps {
   akhirahLens?: boolean;
 }
 
-/** Renders the threads surface with selectable timeline points and detail panels. */
 export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsViewProps) {
   const [activeThread, setActiveThread] = useState<string | null>(null);
   const [activePoint, setActivePoint] = useState<string | null>(null);
@@ -90,7 +89,6 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
   const { healingThreadKeys, akhirahThreadKeys } = useMemo(() => {
     if (!data?.rows.length) return { healingThreadKeys: new Set<string>(), akhirahThreadKeys: new Set<string>() };
 
-    // Single O(entries) pass to build both goal and project entry maps.
     const goalMap = new Map<string, ThroughlineEntry[]>();
     const projectMap = new Map<string, ThroughlineEntry[]>();
     const akhirah = new Set<string>();
@@ -130,9 +128,7 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
       <main className="main main-wide">
         <div className="view-shell view-shell-wide">
           <div className="view-head">
-            <h1>
-              Threads are <em>loading</em>.
-            </h1>
+            <h1>Threads are <em>loading</em>.</h1>
           </div>
         </div>
       </main>
@@ -144,165 +140,187 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
       <main className="main main-wide">
         <div className="view-shell view-shell-wide">
           <div className="view-head">
-            <h1>
-              No threads <em>yet</em>.
-            </h1>
+            <h1>No threads <em>yet</em>.</h1>
             <p className="deck-copy">Create goals, projects, and captures in Feed first. Threads render once there is activity over time.</p>
           </div>
         </div>
       </main>
     );
   }
-  if (!activeRow) {
-    return null;
-  }
+
+  if (!activeRow) return null;
 
   return (
     <main className="main main-wide">
       <div className="view-shell view-shell-wide">
-        <div className="view-head">
-          <h1>
-            Your life as <em>lines</em>.
-          </h1>
-          <p className="deck-copy">
-            Window: {formatDate(data.from)} - {formatDate(data.to)} · {data.rows.length} threads
-          </p>
-        </div>
-
-        <div className="thread-list" role="list" aria-label="Thread list">
-          {data.rows.map((row) => {
-            const key = threadKey(row.kind, row.id);
-            const silent = isSilentThread(row);
-            const healing = silent && healingThreadKeys.has(key);
-            const dimmed = akhirahLens && !akhirahThreadKeys.has(key);
-            return (
-            <div
-              key={`${row.kind}-${row.id}`}
-              className={`thread-row ${row.kind} ${key === activeThread ? "active" : ""} ${dimmed ? "akhirah-dim" : ""}`}
-              role="listitem"
-            >
-              <div className="meta">
-                <div className="kind">
-                  {row.kind === "goal" ? "Life goal" : "Project"}
-                  {healing && <span className="thread-healing-badge" title="Many contracted entries — prioritize spiritual ease">Healing</span>}
-                  {silent && !healing && <span className="thread-quiet-badge" title="No signals in 14+ days — Ṣabr or stagnation?">Quiet</span>}
-                </div>
-                <button
-                  className="name-btn"
-                  onClick={() => setActiveThread(key)}
-                  type="button"
-                  aria-pressed={key === activeThread}
-                  aria-label={`Open thread ${row.name}`}
-                >
-                  {row.name}
-                </button>
-                <div className="stats">
-                  {row.captures} captures · {row.signals} signals · {row.pivots} pivots
-                </div>
+        <div className="threads-wrap">
+          <div className="threads-head">
+            <div>
+              <h3 className="threads-title">
+                {data.rows.length} <em>lines</em> running through your year.
+              </h3>
+              <div className="threads-sub">
+                Last {data.months} months · {formatDate(data.from)} → {formatDate(data.to)}
               </div>
-              <div className="line">
-                <div className="track" />
-                <span className="now-mark" style={{ left: "100%" }} />
-                {row.points.map((point) => (
-                  <button
-                    key={point.id}
-                    className={`dot ${point.kind}`}
-                    style={{ left: `${point.position}%` }}
-                    title={`${point.kind} · ${formatDate(point.created_at)}`}
-                    onClick={() => {
-                      setActiveThread(threadKey(row.kind, row.id));
-                      setActivePoint(point.id);
-                    }}
-                    type="button"
-                    data-testid={`thread-point-${point.id}`}
-                    aria-label={`Open ${point.kind} from ${formatDate(point.created_at)} in ${row.name}`}
-                    aria-pressed={activePoint === point.id && activeThreadKey === threadKey(row.kind, row.id)}
-                  />
-                ))}
-              </div>
-              {row.latest_signal ? (
-                <div className="preview">
-                  <span className="when">{formatDate(row.latest_signal.created_at)}</span>
-                  <span className="preview-content">{renderContent(row.latest_signal.content)}</span>
-                </div>
-              ) : null}
             </div>
-            );
-          })}
-        </div>
-
-        <div className="thread-detail-panel" aria-live="polite">
-          <div className="head">
-            <div className="meta">{activeRow.kind === "goal" ? "Life goal" : "Project"}</div>
-            <h3>{activeRow.name}</h3>
-            <div className="stats">
-              <span>{activeRow.captures} captures</span>
-              <span>{activeRow.signals} signals</span>
-              <span>{activeRow.pivots} pivots</span>
-              <span>Started {formatDate(activeRow.started_at)}</span>
-              <span>Last {formatDate(activeRow.last_at)}</span>
+            <div className="threads-legend" aria-label="Legend">
+              <div className="item"><span className="d reg" aria-hidden="true" />Capture</div>
+              <div className="item"><span className="d sig" aria-hidden="true" />Signal</div>
+              <div className="item"><span className="piv" aria-hidden="true" />Pivot</div>
             </div>
           </div>
 
-          {isSilentThread(activeRow) && healingThreadKeys.has(threadKey(activeRow.kind, activeRow.id)) ? (
-            <div className="sabr-prompt healing">
-              <div className="sabr-prompt-label">Prioritize <em>Inshirāḥ</em></div>
-              <p>
-                More than half of recent entries in this thread were captured in a state of Qabd (contraction). Before pushing for more productivity here, tend to your spiritual ease — <em>Inshirāḥ</em>. Rest, dhikr, or service may open this thread more than effort alone.
-              </p>
-            </div>
-          ) : isSilentThread(activeRow) ? (
-            <div className="sabr-prompt">
-              <div className="sabr-prompt-label">Ṣabr or stagnation?</div>
-              <p>
-                This thread has been quiet for {daysSince(activeRow.last_at)} days with no signals marked. Is this patient
-                persistence — <em>Ṣabr</em> — or have you drifted from this throughline? Reflect on what is keeping it
-                silent before your next weekly review.
-              </p>
-            </div>
-          ) : null}
-
-          {activeCapture ? (
-            <div className="capture-detail">
-              <div className="detail-label">Selected capture</div>
-              <div className="detail-meta">{formatDayTime(activeCapture.created_at)}</div>
-              <div className="detail-content" data-testid="thread-capture-detail">
-                {activeCapture.isCode ? <CodeBlock content={activeCapture.content} /> : renderContent(activeCapture.content)}
-              </div>
-            </div>
-          ) : (
-            <div className="capture-detail muted">Click a bead to inspect a specific capture.</div>
-          )}
-
-          <div className="signals-block">
-            <div className="detail-label">Signals in this thread ({activeSignals.length})</div>
-            {activeSignals.length === 0 ? (
-              <div className="capture-detail muted">No signals marked in this thread yet.</div>
-            ) : (
-              <div className="signal-list">
-                {activeSignals.map((entry) => (
-                  <button
-                    key={entry.id}
-                    className={`signal-row ${entry.id === activePoint ? "active" : ""}`}
-                    onClick={() => setActivePoint(entry.id)}
-                    type="button"
-                    aria-pressed={entry.id === activePoint}
-                    aria-label={`Open signal from ${formatDayTime(entry.created_at)}`}
-                  >
-                    <span className="when">{formatDayTime(entry.created_at)}</span>
-                    <div className={`txt ${entry.isPivot ? "pivot" : ""}`}>
-                      {entry.isCode && entry.content ? (
-                        <CodeBlock content={entry.content} />
-                      ) : entry.content ? (
-                        renderContent(entry.content)
-                      ) : (
-                        entry.pivotLabel || entry.to || "Pivot"
+          <div className="threads-spines" role="list" aria-label="Thread list">
+            {(() => {
+              let goalIdx = 0;
+              let projectIdx = 0;
+              return data.rows.map((row) => {
+              const key = threadKey(row.kind, row.id);
+              const silent = isSilentThread(row);
+              const healing = silent && healingThreadKeys.has(key);
+              const dimmed = akhirahLens && !akhirahThreadKeys.has(key);
+              const idx = row.kind === "goal" ? ++goalIdx : ++projectIdx;
+              const idxLabel = String(idx).padStart(2, "0");
+              return (
+                <div
+                  key={`${row.kind}-${row.id}`}
+                  className={`spine ${row.kind} ${dimmed ? "akhirah-dim" : ""}`}
+                  role="listitem"
+                >
+                  <div className="meta">
+                    <div className="kind">
+                      <span className="dot" aria-hidden="true" />
+                      {row.kind === "goal" ? `Life goal ${idxLabel}` : `Project ${idxLabel}`}
+                      {healing && (
+                        <span className="thread-healing-badge" title="Many contracted entries — prioritize spiritual ease">
+                          Healing
+                        </span>
+                      )}
+                      {silent && !healing && (
+                        <span className="thread-quiet-badge" title="No signals in 14+ days — Ṣabr or stagnation?">
+                          Quiet
+                        </span>
                       )}
                     </div>
-                  </button>
-                ))}
+                    <button
+                      className={`name${key === activeThread ? " active" : ""}`}
+                      onClick={() => setActiveThread(key)}
+                      type="button"
+                      aria-pressed={key === activeThread}
+                      aria-label={`Open thread ${row.name}`}
+                    >
+                      {row.name}
+                    </button>
+                    <div className="stats">
+                      {row.captures} captures · <strong>{row.signals} signals</strong>
+                    </div>
+                  </div>
+
+                  <div className="spine-line">
+                    {row.points.map((point) => (
+                      <button
+                        key={point.id}
+                        className={`bead ${point.kind === "signal" ? "sig" : point.kind === "pivot" ? "pivot" : ""}`}
+                        style={{ left: `${point.position}%` }}
+                        title={`${point.kind} · ${formatDate(point.created_at)}`}
+                        onClick={() => {
+                          setActiveThread(threadKey(row.kind, row.id));
+                          setActivePoint(point.id);
+                        }}
+                        type="button"
+                        data-testid={`thread-point-${point.id}`}
+                        aria-label={`Open ${point.kind} from ${formatDate(point.created_at)} in ${row.name}`}
+                        aria-pressed={activePoint === point.id && activeThreadKey === threadKey(row.kind, row.id)}
+                      />
+                    ))}
+                    <span className="today-mark" aria-hidden="true" />
+                  </div>
+
+                  {row.latest_signal && (
+                    <div className="preview">
+                      <span className="when">{formatDate(row.latest_signal.created_at)}</span>
+                      {renderContent(row.latest_signal.content)}
+                    </div>
+                  )}
+                </div>
+              );
+            });
+            })()}
+          </div>
+
+          <div className="thread-detail-panel" aria-live="polite">
+            <div className="head">
+              <div className="meta">{activeRow.kind === "goal" ? "Life goal" : "Project"}</div>
+              <h3>{activeRow.name}</h3>
+              <div className="stats">
+                <span>{activeRow.captures} captures</span>
+                <span>{activeRow.signals} signals</span>
+                <span>{activeRow.pivots} pivots</span>
+                <span>Started {formatDate(activeRow.started_at)}</span>
+                <span>Last {formatDate(activeRow.last_at)}</span>
               </div>
+            </div>
+
+            {isSilentThread(activeRow) && healingThreadKeys.has(threadKey(activeRow.kind, activeRow.id)) ? (
+              <div className="sabr-prompt healing">
+                <div className="sabr-prompt-label">Prioritize <em>Inshirāḥ</em></div>
+                <p>
+                  More than half of recent entries in this thread were captured in a state of Qabd (contraction). Before pushing for more productivity here, tend to your spiritual ease — <em>Inshirāḥ</em>. Rest, dhikr, or service may open this thread more than effort alone.
+                </p>
+              </div>
+            ) : isSilentThread(activeRow) ? (
+              <div className="sabr-prompt">
+                <div className="sabr-prompt-label">Ṣabr or stagnation?</div>
+                <p>
+                  This thread has been quiet for {daysSince(activeRow.last_at)} days with no signals marked. Is this patient
+                  persistence — <em>Ṣabr</em> — or have you drifted from this throughline? Reflect on what is keeping it
+                  silent before your next weekly review.
+                </p>
+              </div>
+            ) : null}
+
+            {activeCapture ? (
+              <div className="capture-detail">
+                <div className="detail-label">Selected capture</div>
+                <div className="detail-meta">{formatDayTime(activeCapture.created_at)}</div>
+                <div className="detail-content" data-testid="thread-capture-detail">
+                  {activeCapture.isCode ? <CodeBlock content={activeCapture.content} /> : renderContent(activeCapture.content)}
+                </div>
+              </div>
+            ) : (
+              <div className="capture-detail muted">Click a bead to inspect a specific capture.</div>
             )}
+
+            <div className="signals-block">
+              <div className="detail-label">Signals in this thread ({activeSignals.length})</div>
+              {activeSignals.length === 0 ? (
+                <div className="capture-detail muted">No signals marked in this thread yet.</div>
+              ) : (
+                <div className="signal-list">
+                  {activeSignals.map((entry) => (
+                    <button
+                      key={entry.id}
+                      className={`signal-row ${entry.id === activePoint ? "active" : ""}`}
+                      onClick={() => setActivePoint(entry.id)}
+                      type="button"
+                      aria-pressed={entry.id === activePoint}
+                      aria-label={`Open signal from ${formatDayTime(entry.created_at)}`}
+                    >
+                      <span className="when">{formatDayTime(entry.created_at)}</span>
+                      <div className={`txt ${entry.isPivot ? "pivot" : ""}`}>
+                        {entry.isCode && entry.content ? (
+                          <CodeBlock content={entry.content} />
+                        ) : entry.content ? (
+                          renderContent(entry.content)
+                        ) : (
+                          entry.pivotLabel || entry.to || "Pivot"
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

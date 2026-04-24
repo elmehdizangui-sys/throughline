@@ -262,6 +262,10 @@ function Capture({
   onCancel,
   initialEntry,
   akhirahLens,
+  priority: externalPriority,
+  stateOfHeart: externalHeartState,
+  onPriorityChange,
+  onHeartStateChange,
 }: {
   goals: ThroughlineGoal[];
   projects: ThroughlineProject[];
@@ -269,6 +273,10 @@ function Capture({
   onCancel?: () => void;
   initialEntry?: ThroughlineEntry;
   akhirahLens?: boolean;
+  priority?: EntryPriority | null;
+  stateOfHeart?: HeartState | null;
+  onPriorityChange?: (p: EntryPriority | null) => void;
+  onHeartStateChange?: (s: HeartState | null) => void;
 }) {
   const [blockNoteView, setBlockNoteView] = useState<ComponentType<BlockNoteRuntimeViewProps> | null>(null);
   const [editor, setEditor] = useState<BlockNoteRuntimeEditor | null>(null);
@@ -279,8 +287,21 @@ function Capture({
   const [selectedGoals, setSelectedGoals] = useState<string[]>(initialEntry?.goals ?? []);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(initialEntry?.projects ?? []);
   const [isCode, setIsCode] = useState(initialEntry?.isCode ?? false);
-  const [priority, setPriority] = useState<EntryPriority | null>(initialEntry?.priority ?? null);
-  const [stateOfHeart, setStateOfHeart] = useState<HeartState | null>(initialEntry?.stateOfHeart ?? null);
+  const [internalPriority, setInternalPriority] = useState<EntryPriority | null>(initialEntry?.priority ?? null);
+  const [internalHeartState, setInternalHeartState] = useState<HeartState | null>(initialEntry?.stateOfHeart ?? null);
+
+  const isExternallyControlled = externalPriority !== undefined;
+  const priority = isExternallyControlled ? externalPriority : internalPriority;
+  const stateOfHeart = isExternallyControlled ? externalHeartState : internalHeartState;
+
+  const handlePriorityChange = (next: EntryPriority | null) => {
+    if (isExternallyControlled) onPriorityChange?.(next);
+    else setInternalPriority(next);
+  };
+  const handleHeartStateChange = (next: HeartState | null) => {
+    if (isExternallyControlled) onHeartStateChange?.(next);
+    else setInternalHeartState(next);
+  };
 
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const fallbackInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -405,8 +426,9 @@ function Capture({
     setSelectedGoals([]);
     setSelectedProjects([]);
     setIsCode(false);
-    setPriority(null);
-    setStateOfHeart(null);
+    handlePriorityChange(null);
+    handleHeartStateChange(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [blockNoteView, editor, htmlValue, isCode, markdownValue, onAdd, priority, selectedGoals, selectedProjects, stateOfHeart, tags]);
 
   const BlockNoteRenderer = blockNoteView;
@@ -452,49 +474,51 @@ function Capture({
         />
       )}
 
-      <div className={`internal-audit-panel${akhirahLens ? " akhirah-active" : ""}`}>
-        <div className="audit-col">
-          <div className="audit-label">Niyyah · Intention</div>
-          <div className="capture-intention-toggle">
-            <button
-              className={priority === "dunya" ? "on" : ""}
-              data-priority="dunya"
-              onClick={() => setPriority((state) => (state === "dunya" ? null : "dunya"))}
-              type="button"
-              aria-pressed={priority === "dunya"}
-            >
-              ◎ Dunya
-            </button>
-            <button
-              className={priority === "akhirah" ? "on" : ""}
-              data-priority="akhirah"
-              onClick={() => setPriority((state) => (state === "akhirah" ? null : "akhirah"))}
-              type="button"
-              aria-pressed={priority === "akhirah"}
-            >
-              ☽ Akhirah
-            </button>
-          </div>
-        </div>
-        <div className="audit-col">
-          <div className="audit-label">Ḥāl · Heart State</div>
-          <div className="heart-state-toggle">
-            {(["open", "clear", "clouded", "contracted"] as const).map((s) => (
+      {!isExternallyControlled && (
+        <div className={`internal-audit-panel${akhirahLens ? " akhirah-active" : ""}`}>
+          <div className="audit-col">
+            <div className="audit-label">Niyyah · Intention</div>
+            <div className="capture-intention-toggle">
               <button
-                key={s}
-                data-state={s}
-                className={stateOfHeart === s ? "on" : ""}
-                onClick={() => setStateOfHeart((prev) => (prev === s ? null : s))}
+                className={priority === "dunya" ? "on" : ""}
+                data-priority="dunya"
+                onClick={() => handlePriorityChange(priority === "dunya" ? null : "dunya")}
                 type="button"
-                aria-pressed={stateOfHeart === s}
-                title={s === "open" ? "Inshirāḥ — expansive" : s === "clear" ? "Ṣafā — clear" : s === "clouded" ? "Ghaflah — distracted" : "Qabd — contracted"}
+                aria-pressed={priority === "dunya"}
               >
-                {s === "open" ? "○ Inshirāḥ" : s === "clear" ? "◇ Ṣafā" : s === "clouded" ? "≈ Ghaflah" : "● Qabd"}
+                ◎ Dunya
               </button>
-            ))}
+              <button
+                className={priority === "akhirah" ? "on" : ""}
+                data-priority="akhirah"
+                onClick={() => handlePriorityChange(priority === "akhirah" ? null : "akhirah")}
+                type="button"
+                aria-pressed={priority === "akhirah"}
+              >
+                ☽ Akhirah
+              </button>
+            </div>
+          </div>
+          <div className="audit-col">
+            <div className="audit-label">Ḥāl · Heart State</div>
+            <div className="heart-state-toggle">
+              {(["open", "clear", "clouded", "contracted"] as const).map((s) => (
+                <button
+                  key={s}
+                  data-state={s}
+                  className={stateOfHeart === s ? "on" : ""}
+                  onClick={() => handleHeartStateChange(stateOfHeart === s ? null : s)}
+                  type="button"
+                  aria-pressed={stateOfHeart === s}
+                  title={s === "open" ? "Inshirāḥ — expansive" : s === "clear" ? "Ṣafā — clear" : s === "clouded" ? "Ghaflah — distracted" : "Qabd — contracted"}
+                >
+                  {s === "open" ? "○ Inshirāḥ" : s === "clear" ? "◇ Ṣafā" : s === "clouded" ? "≈ Ghaflah" : "● Qabd"}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {(selectedCount > 0 || tags.length > 0 || isCode || link) && (
         <div className="capture-chips">
@@ -620,6 +644,139 @@ function Capture({
   );
 }
 
+const NIYYAH_OPTIONS: { value: EntryPriority; label: string; hint: string }[] = [
+  { value: "dunya", label: "Dunya", hint: "Worldly" },
+  { value: "akhirah", label: "Ākhirah", hint: "Afterlife" },
+];
+
+const HAL_OPTIONS: { value: HeartState; label: string; hint: string }[] = [
+  { value: "open", label: "Inshirāḥ", hint: "Expansion" },
+  { value: "clear", label: "Ṣafā", hint: "Clarity" },
+  { value: "clouded", label: "Ghaflah", hint: "Heedlessness" },
+  { value: "contracted", label: "Qabḍ", hint: "Contraction" },
+];
+
+function QuickActions({
+  priority,
+  stateOfHeart,
+  onPriorityChange,
+  onHeartStateChange,
+}: {
+  priority: EntryPriority | null;
+  stateOfHeart: HeartState | null;
+  onPriorityChange: (p: EntryPriority | null) => void;
+  onHeartStateChange: (s: HeartState | null) => void;
+}) {
+  const [openPill, setOpenPill] = useState<"niyyah" | "hal" | null>(null);
+
+  useEffect(() => {
+    if (!openPill) return;
+    const close = (e: MouseEvent) => {
+      if (!(e.target as Element).closest(".qa-pill")) setOpenPill(null);
+    };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpenPill(null); };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [openPill]);
+
+  const niyyahLabel = priority ? NIYYAH_OPTIONS.find(o => o.value === priority)?.label : null;
+  const halLabel = stateOfHeart ? HAL_OPTIONS.find(o => o.value === stateOfHeart)?.label : null;
+
+  return (
+    <div className="quick-actions">
+      {/* Niyyah pill */}
+      <div
+        role="button"
+        tabIndex={0}
+        className={`qa-pill${openPill === "niyyah" ? " open" : ""}${priority === "akhirah" ? " val-akhirah" : ""}`}
+        data-kind="niyyah"
+        onClick={() => setOpenPill(p => p === "niyyah" ? null : "niyyah")}
+        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenPill(p => p === "niyyah" ? null : "niyyah"); } }}
+      >
+        <svg className="qa-icon" viewBox="0 0 16 16" width={14} height={14} fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx={8} cy={8} r={5.5} />
+          <path d="M2.5 8h11M8 2.5v11" />
+        </svg>
+        <span className="qa-label">Niyyah</span>
+        <span className="qa-value">{niyyahLabel ?? "Dunya"}</span>
+        <svg className="qa-caret" viewBox="0 0 10 10" width={10} height={10} fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M2 3.5l3 3 3-3" />
+        </svg>
+        {openPill === "niyyah" && (
+          <div className="qa-popover" onClick={e => e.stopPropagation()}>
+            <span className="qa-popover-label">Niyyah · Intention</span>
+            {NIYYAH_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                className={`qa-option${priority === opt.value ? " selected" : ""}`}
+                onClick={() => { onPriorityChange(opt.value); setOpenPill(null); }}
+                type="button"
+              >
+                <svg className="opt-icon" viewBox="0 0 16 16" width={14} height={14} fill="none" stroke="currentColor" strokeWidth="1.5">
+                  {opt.value === "dunya" ? (
+                    <><circle cx={8} cy={8} r={5.5} /><path d="M2.5 8h11" /></>
+                  ) : (
+                    <path d="M8 2l1.5 3.5L13 6.5l-2.5 2.5.6 3.5L8 11l-3.1 1.5.6-3.5L3 6.5l3.5-1z" />
+                  )}
+                </svg>
+                <span className="opt-name"><span className="diacritic">{opt.label}</span></span>
+                <span className="opt-hint">{opt.hint}</span>
+                <span className="opt-check">✓</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Ḥāl pill */}
+      <div
+        role="button"
+        tabIndex={0}
+        className={`qa-pill${openPill === "hal" ? " open" : ""}${stateOfHeart ? " has-selection" : ""}`}
+        data-kind="hal"
+        onClick={() => setOpenPill(p => p === "hal" ? null : "hal")}
+        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenPill(p => p === "hal" ? null : "hal"); } }}
+      >
+        <svg className="qa-icon" viewBox="0 0 16 16" width={14} height={14} fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M8 3C5.8 3 4 4.8 4 7c0 1.6.9 3 2.2 3.7L5.5 13l2.5-1 2.5 1-.7-2.3C11.1 10 12 8.6 12 7c0-2.2-1.8-4-4-4z" />
+        </svg>
+        <span className="qa-label">Ḥāl</span>
+        <span className={`qa-value${!stateOfHeart ? " qa-placeholder" : ""}`}>{halLabel ?? "Set state"}</span>
+        <svg className="qa-caret" viewBox="0 0 10 10" width={10} height={10} fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M2 3.5l3 3 3-3" />
+        </svg>
+        {openPill === "hal" && (
+          <div className="qa-popover" onClick={e => e.stopPropagation()}>
+            <span className="qa-popover-label">Ḥāl · Heart state</span>
+            {HAL_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                className={`qa-option${stateOfHeart === opt.value ? " selected" : ""}`}
+                onClick={() => { onHeartStateChange(opt.value); setOpenPill(null); }}
+                type="button"
+              >
+                <svg className="opt-icon" viewBox="0 0 16 16" width={14} height={14} fill="none" stroke="currentColor" strokeWidth="1.5">
+                  {opt.value === "open" && <><circle cx={8} cy={8} r={5} /><path d="M8 5.5v5M5.5 8h5" /></>}
+                  {opt.value === "clear" && <><circle cx={8} cy={8} r={5} /><path d="M5.5 8h5" /></>}
+                  {opt.value === "clouded" && <><path d="M3 7.5c0-2 2.2-3.5 5-3.5s5 1.5 5 3.5-2.2 3.5-5 3.5S3 9.5 3 7.5z" /><path d="M8 11v2" /></>}
+                  {opt.value === "contracted" && <path d="M5 6.5c0-1.7 1.3-3 3-3s3 1.3 3 3v2c0 1.7-1.3 3-3 3s-3-1.3-3-3v-2z" />}
+                </svg>
+                <span className="opt-name"><span className="diacritic">{opt.label}</span></span>
+                <span className="opt-hint">{opt.hint}</span>
+                <span className="opt-check">✓</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface FeedViewProps {
   activeGreeting: string;
   greetingName?: string;
@@ -661,7 +818,10 @@ export function FeedView({
   onUpdateEntry,
   akhirahLens,
 }: FeedViewProps) {
+  const [quickPriority, setQuickPriority] = useState<EntryPriority | null>(null);
+  const [quickHeartState, setQuickHeartState] = useState<HeartState | null>(null);
   const trimmedGreetingName = greetingName?.trim();
+
   return (
     <main className="main">
       <div className="dateline">
@@ -676,7 +836,22 @@ export function FeedView({
         <em>What's worth keeping?</em>
       </h1>
 
-      <Capture goals={goals} projects={projects} onAdd={onAddEntry} akhirahLens={akhirahLens} />
+      <Capture
+        goals={goals}
+        projects={projects}
+        onAdd={(payload) => { onAddEntry(payload); setQuickPriority(null); setQuickHeartState(null); }}
+        akhirahLens={akhirahLens}
+        priority={quickPriority}
+        stateOfHeart={quickHeartState}
+        onPriorityChange={setQuickPriority}
+        onHeartStateChange={setQuickHeartState}
+      />
+      <QuickActions
+        priority={quickPriority}
+        stateOfHeart={quickHeartState}
+        onPriorityChange={setQuickPriority}
+        onHeartStateChange={setQuickHeartState}
+      />
       <FilterBar filter={filter} setFilter={setFilter} count={filteredEntries.filter((entry) => !entry.isPivot).length} />
 
       {contextFilter ? (

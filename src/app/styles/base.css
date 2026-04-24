@@ -27,6 +27,13 @@
   --star: #b8863a;
   --star-soft: #f3ead3;
 
+  /* ── Pivot (terracotta-dark) ── */
+  --pivot: #a44a2c;
+  --pivot-soft: #f0d8cd;
+
+  /* ── Italic display font alias ── */
+  --f-italic: var(--font-instrument-serif), var(--f-display);
+
   /* ── Danger (warm crimson) ── */
   --danger: #b53333;
   --danger-soft: #f4dede;

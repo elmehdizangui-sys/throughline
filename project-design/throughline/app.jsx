@@ -58,6 +58,8 @@ function App() {
   const [contextFilter, setContextFilter] = useState(null); // {type, id, label}
   const [reviewOpen, setReviewOpen] = useState(false);
   const [view, setView] = useState('feed');
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [composerKind, setComposerKind] = useState('goal');
 
   // apply tweaks to DOM + persist
   useEffect(() => {
@@ -80,6 +82,19 @@ function App() {
   }, []);
 
   const setTweak = (k, v) => setTweaks(t => ({ ...t, [k]: v }));
+
+  function openComposer(kind) {
+    setComposerKind(kind);
+    setComposerOpen(true);
+  }
+
+  function handleComposerSave({ kind, name }) {
+    if (kind === 'goal') {
+      setGoals(prev => [...prev, { id: 'g-' + Date.now(), name, color: 'var(--accent)' }]);
+    } else {
+      setProjects(prev => [...prev, { id: 'p-' + Date.now(), name, tag: name.toLowerCase().replace(/\s+/g, '-') }]);
+    }
+  }
 
   function addEntry(e) {
     const id = 'e-' + Date.now();
@@ -152,71 +167,94 @@ function App() {
   return (
     <>
       <Sidebar goals={goals} projects={projects} activeFilter={contextFilter}
-               onSlotClick={onSlotClick} onStartReview={() => setReviewOpen(true)} />
+               onSlotClick={onSlotClick} onStartReview={() => setReviewOpen(true)}
+               onOpenComposer={openComposer} />
       <Masthead onOpenTweaks={() => setTweaksOpen(true)} onView={setView} view={view} />
-      <BigLineBar goals={goals} projects={projects} activeFilter={contextFilter}
-                  onSlotClick={onSlotClick} onStartReview={() => setReviewOpen(true)} />
 
-      <Minimap data={MINIMAP} />
+      {view === 'feed' && (
+        <>
+          <BigLineBar goals={goals} projects={projects} activeFilter={contextFilter}
+                      onSlotClick={onSlotClick} onStartReview={() => setReviewOpen(true)} />
+          <Minimap data={MINIMAP} />
+          <main className="main" data-screen-label="Feed">
+            <div className="dateline">
+              <span>{new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric', year:'numeric'}).toUpperCase()}</span>
+              <span className="rule" />
+              <span>Week {Math.ceil((new Date().getDate()) / 7)} · {entries.filter(e=>!e.isPivot).length} captures</span>
+            </div>
+            <h1 className="greeting">
+              {activeGreeting}, Alex. <em>What's worth keeping?</em>
+            </h1>
 
-      <main className="main" data-screen-label="Feed">
-        <div className="dateline">
-          <span>{new Date().toLocaleDateString([], {weekday:'long', month:'long', day:'numeric', year:'numeric'}).toUpperCase()}</span>
-          <span className="rule" />
-          <span>Week {Math.ceil((new Date().getDate()) / 7)} · {entries.filter(e=>!e.isPivot).length} captures</span>
-        </div>
-        <h1 className="greeting">
-          {activeGreeting}, Alex. <em>What's worth keeping?</em>
-        </h1>
+            <Capture goals={goals} projects={projects} onAdd={addEntry} />
 
-        <Capture goals={goals} projects={projects} onAdd={addEntry} />
+            <FilterBar filter={filter} setFilter={setFilter} count={filtered.filter(e=>!e.isPivot).length} />
 
-        <FilterBar filter={filter} setFilter={setFilter} count={filtered.filter(e=>!e.isPivot).length} />
-
-        {contextFilter && (
-          <div className="filter-context">
-            <span>Filtering to</span>
-            <strong style={{fontWeight:600}}>
-              {contextFilter.type === 'goal' && '◎ '}
-              {contextFilter.label}
-            </strong>
-            <span style={{opacity:.7, marginLeft:4, fontFamily:'var(--f-mono)', fontSize:11}}>
-              {filtered.filter(e=>!e.isPivot).length} entries
-            </span>
-            <button className="close" onClick={() => setContextFilter(null)}>×</button>
-          </div>
-        )}
-
-        <div className="feed">
-          {grouped.length === 0 && (
-            <div className="empty">Nothing here yet. The feed is listening.</div>
-          )}
-          {grouped.map(g => (
-            <div key={g.day}>
-              <div className="day-divider">
-                <span>{g.day}</span>
-                <span className="rule" />
-                <span>{g.items.filter(e=>!e.isPivot).length}</span>
+            {contextFilter && (
+              <div className="filter-context">
+                <span>Filtering to</span>
+                <strong style={{fontWeight:600}}>
+                  {contextFilter.type === 'goal' && '◎ '}
+                  {contextFilter.label}
+                </strong>
+                <span style={{opacity:.7, marginLeft:4, fontFamily:'var(--f-mono)', fontSize:11}}>
+                  {filtered.filter(e=>!e.isPivot).length} entries
+                </span>
+                <button className="close" onClick={() => setContextFilter(null)}>×</button>
               </div>
-              {g.items.map(e => (
-                e.isPivot ? <PivotMarker key={e.id} pivot={e} /> :
-                <Entry key={e.id} entry={e} goals={goals} projects={projects}
-                       onStar={toggleStar} onFilter={setContextFilter} />
+            )}
+
+            <div className="feed">
+              {grouped.length === 0 && (
+                <div className="empty">Nothing here yet. The feed is listening.</div>
+              )}
+              {grouped.map(g => (
+                <div key={g.day}>
+                  <div className="day-divider">
+                    <span>{g.day}</span>
+                    <span className="rule" />
+                    <span>{g.items.filter(e=>!e.isPivot).length}</span>
+                  </div>
+                  {g.items.map(e => (
+                    e.isPivot ? <PivotMarker key={e.id} pivot={e} /> :
+                    <Entry key={e.id} entry={e} goals={goals} projects={projects}
+                           onStar={toggleStar} onFilter={setContextFilter} />
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
-        </div>
-      </main>
+          </main>
+        </>
+      )}
+
+      {view === 'threads' && (
+        <main className="main" style={{maxWidth:'none', padding:0}} data-screen-label="Threads">
+          <ThreadsView />
+        </main>
+      )}
+
+      {view === 'map' && (
+        <main className="main" style={{maxWidth:'none', padding:0}} data-screen-label="Timeline">
+          <TimelineView />
+        </main>
+      )}
 
       {reviewOpen && (
         <WeeklyReview entries={entries} goals={goals} projects={projects}
                       onClose={() => setReviewOpen(false)} onApply={applyReview} />
       )}
 
+      <ComposerModal
+        open={composerOpen}
+        kind={composerKind}
+        goals={goals}
+        onClose={() => setComposerOpen(false)}
+        onSave={handleComposerSave}
+      />
+
       <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)}
                    tweaks={tweaks} setTweak={setTweak} />
 
-      {/* Floating tweaks trigger when panel is closed */}
       {!tweaksOpen && (
         <button onClick={() => setTweaksOpen(true)}
           style={{position:'fixed', bottom:20, right:20, zIndex:40,

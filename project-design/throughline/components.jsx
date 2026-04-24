@@ -455,7 +455,7 @@ function WeeklyReview({ entries, goals, projects, onClose, onApply }) {
 }
 
 // ─── Sidebar variant ───
-function Sidebar({ goals, projects, onSlotClick, activeFilter, onStartReview }) {
+function Sidebar({ goals, projects, onSlotClick, activeFilter, onStartReview, onOpenComposer }) {
   return (
     <aside className="sidebar">
       <div className="wordmark" style={{marginBottom:8}}>
@@ -471,6 +471,7 @@ function Sidebar({ goals, projects, onSlotClick, activeFilter, onStartReview }) 
             <span className="t">{g.name}</span>
           </div>
         ))}
+        <button className="side-create" onClick={() => onOpenComposer('goal')}>New life goal</button>
       </div>
       <div>
         <h3>Projects</h3>
@@ -481,11 +482,392 @@ function Sidebar({ goals, projects, onSlotClick, activeFilter, onStartReview }) 
             <span className="t">{p.name}</span>
           </div>
         ))}
+        <button className="side-create" onClick={() => onOpenComposer('project')}>New project</button>
       </div>
       <div style={{marginTop:'auto'}}>
         <button className="review-btn" style={{width:'100%'}} onClick={onStartReview}>Weekly review</button>
       </div>
     </aside>
+  );
+}
+
+// ─── Composer modal (A) ───
+const HUES = [
+  'oklch(0.55 0.12 40)',
+  'oklch(0.48 0.1 150)',
+  'oklch(0.45 0.14 270)',
+  'oklch(0.58 0.14 10)',
+  'oklch(0.25 0.02 260)',
+];
+
+function ComposerModal({ open, kind, goals, onClose, onSave }) {
+  const [activeKind, setActiveKind] = useState(kind);
+  const [name, setName] = useState('');
+  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [selectedHue, setSelectedHue] = useState(0);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    setActiveKind(kind);
+    setName('');
+    setSelectedGoal(null);
+    if (open) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [open, kind]);
+
+  useEffect(() => {
+    function key(e) {
+      if (!open) return;
+      if (e.key === 'Escape') onClose();
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') handleSave();
+    }
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [open, name]);
+
+  function handleSave() {
+    if (!name.trim()) { inputRef.current?.focus(); return; }
+    onSave({ kind: activeKind, name: name.trim(), goalId: selectedGoal, hue: selectedHue });
+    onClose();
+  }
+
+  if (!open) return null;
+
+  const isGoal = activeKind === 'goal';
+  const q = isGoal ? 'The life goal is called' : 'The project is called';
+  const placeholder = 'Name it the way you'd say it aloud…';
+  const why = isGoal
+    ? 'What would it look like to have lived this well? A sentence. Optional.'
+    : 'What does a good week on this project feel like? A line or two. Optional.';
+
+  return (
+    <div className="composer-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="composer-shell" role="dialog" aria-modal="true">
+        <button className="composer-close" aria-label="Close" onClick={onClose}>×</button>
+        <div className="composer">
+          <div className="composer-type">
+            <button data-kind="goal" className={isGoal ? 'on' : ''} onClick={() => setActiveKind('goal')}>Life goal</button>
+            <button data-kind="project" className={!isGoal ? 'on' : ''} onClick={() => setActiveKind('project')}>Project</button>
+          </div>
+          <div className="q">{q}</div>
+          <input
+            ref={inputRef}
+            className="big-input"
+            type="text"
+            placeholder={placeholder}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <div className="underline" />
+          <div className="why">{why}</div>
+
+          {!isGoal && (
+            <div className="field-row">
+              <div className="field-label">Feeds into</div>
+              <div className="field-body">
+                <div className="goal-pick">
+                  <span className={'goal-chip none ' + (selectedGoal === null ? 'sel' : '')}
+                        onClick={() => setSelectedGoal(null)}>Standalone</span>
+                  {goals.map(g => (
+                    <span key={g.id} className={'goal-chip ' + (selectedGoal === g.id ? 'sel' : '')}
+                          onClick={() => setSelectedGoal(g.id)}>
+                      <span className="d" />
+                      {g.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="field-row">
+            <div className="field-label">Target</div>
+            <div className="field-body">
+              <div className="target">
+                <span className="cal" />
+                End of year · Dec 31, 2026
+              </div>
+            </div>
+          </div>
+
+          <div className="field-row" style={{borderBottom:'1px solid var(--rule)', marginBottom:28}}>
+            <div className="field-label">Color</div>
+            <div className="field-body">
+              <div className="hue-pick">
+                {HUES.map((h, i) => (
+                  <span key={i} className={'hue ' + (selectedHue === i ? 'on' : '')}
+                        style={{background: h}} onClick={() => setSelectedHue(i)} />
+                ))}
+                {!isGoal && <span style={{fontFamily:'var(--f-mono)', fontSize:10, color:'var(--ink-4)', marginLeft:8}}>inherits from goal →</span>}
+              </div>
+            </div>
+          </div>
+
+          <div className="composer-foot">
+            <div className="hint"><span className="kbd">⌘</span><span className="kbd">↵</span> to save</div>
+            <div className="actions">
+              <button className="cancel" onClick={onClose}>Cancel</button>
+              <button className="save" onClick={handleSave}>{isGoal ? 'Add goal' : 'Add project'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Threads view (B) ───
+const THREADS_DATA = [
+  { id: 'g1', kind: 'goal', label: 'Life goal 01', name: 'Build a business that compounds', captures: 58, signals: 9,
+    preview: "The 'organizing tax' on notes is why I stop journaling. Capture must be free.",
+    previewWhen: 'Tue · Apr 15',
+    beads: [
+      {l:'3%'},{l:'6%'},{l:'11%',sig:true},{l:'14%'},{l:'17%'},{l:'22%',pivot:true},
+      {l:'26%'},{l:'30%',sig:true},{l:'33%'},{l:'38%'},{l:'42%'},{l:'47%',sig:true},
+      {l:'51%'},{l:'54%'},{l:'58%'},{l:'62%',sig:true},{l:'66%'},{l:'70%'},{l:'74%',pivot:true},
+      {l:'78%'},{l:'82%',sig:true},{l:'86%'},{l:'89%'},{l:'93%',sig:true},
+    ],
+    detail: { crumb: null, sub: 'A throughline for compound work — revenue, relationships, leverage.', stats: [{n:'58',l:'Captures'},{n:'9',l:'Signals'},{n:'2',l:'Pivots'},{n:'16',l:'Weeks'}],
+      signals: [{when:'Apr 15',txt:"The 'organizing tax' is why journaling dies. Capture free, sort deferred.",ctx:'#insight'},{when:'Apr 11',txt:'Pricing conversation with Mateo — $29 reads consumer not pro.',ctx:'#pricing'},{when:'Mar 28',txt:'Pivot: stopped consulting to build full-time.',ctx:'pivot'}] }
+  },
+  { id: 'p1', kind: 'project', label: 'Project 01', name: 'Throughline launch', captures: 28, signals: 5,
+    beads: [{l:'40%'},{l:'44%'},{l:'49%',sig:true},{l:'52%'},{l:'56%'},{l:'60%'},{l:'64%',sig:true},{l:'68%'},{l:'72%'},{l:'76%',sig:true},{l:'80%'},{l:'84%'},{l:'88%',sig:true},{l:'92%'},{l:'95%',sig:true}],
+    detail: { crumb: 'Build a business that compounds', sub: 'Ship the product that proves the idea.', stats: [{n:'28',l:'Captures'},{n:'5',l:'Signals'},{n:'0',l:'Pivots'},{n:'8',l:'Weeks'}],
+      signals: [{when:'Apr 16',txt:'Shipped landing v1. Not proud yet — shipped > proud, for now.',ctx:'#ship'},{when:'Apr 8',txt:'Fixed sticky-header jitter on mobile.',ctx:'#bug'}] }
+  },
+  { id: 'g2', kind: 'goal', label: 'Life goal 02', name: 'Write every day, ship every month', captures: 36, signals: 6,
+    beads: [{l:'2%'},{l:'5%'},{l:'9%'},{l:'13%',sig:true},{l:'17%'},{l:'21%'},{l:'25%'},{l:'29%',sig:true},{l:'34%'},{l:'41%'},{l:'52%'},{l:'58%',sig:true},{l:'64%'},{l:'71%'},{l:'77%',sig:true},{l:'83%'},{l:'89%'}],
+    detail: { crumb: null, sub: 'The discipline underneath everything else.', stats: [{n:'36',l:'Captures'},{n:'6',l:'Signals'},{n:'0',l:'Pivots'},{n:'16',l:'Weeks'}],
+      signals: [{when:'Apr 15',txt:'Morning thought: the organizing tax on notes.',ctx:'#writing'},{when:'Apr 9',txt:'Re-read Morning Pages — friction to write < friction to file.',ctx:'#reading'}] }
+  },
+  { id: 'g3', kind: 'goal', label: 'Life goal 03', name: 'Be present with Maya & Leo', captures: 18, signals: 3,
+    beads: [{l:'6%'},{l:'13%'},{l:'19%',sig:true},{l:'27%'},{l:'36%'},{l:'44%'},{l:'51%',sig:true},{l:'59%'},{l:'66%'},{l:'74%'},{l:'81%',sig:true},{l:'89%'},{l:'94%'}],
+    detail: { crumb: null, sub: 'The reason all product insights matter.', stats: [{n:'18',l:'Captures'},{n:'3',l:'Signals'},{n:'0',l:'Pivots'},{n:'16',l:'Weeks'}],
+      signals: [{when:'Apr 15',txt:"Leo asked why grown-ups look at phones at dinner.",ctx:'#family'}] }
+  },
+  { id: 'p2', kind: 'project', label: 'Project · standalone', name: 'Q2 client work — Ember Co.', captures: 12, signals: 2,
+    beads: [{l:'48%'},{l:'52%'},{l:'57%'},{l:'62%',sig:true},{l:'66%'},{l:'71%'},{l:'75%'},{l:'80%'},{l:'84%'},{l:'88%'},{l:'90%',sig:true},{l:'94%'}],
+    detail: { crumb: null, sub: 'Consulting engagement, Q2 2026.', stats: [{n:'12',l:'Captures'},{n:'2',l:'Signals'},{n:'0',l:'Pivots'},{n:'4',l:'Weeks'}],
+      signals: [{when:'Apr 8',txt:'Kickoff went well — 3-week timeline, thin margin.',ctx:'#consulting'}] }
+  },
+];
+
+function ThreadsView() {
+  const [activeThread, setActiveThread] = useState(null);
+
+  function openThread(t) { setActiveThread(t); }
+  function closeThread() { setActiveThread(null); }
+
+  return (
+    <div className="threads-view">
+      <div className="threads-head">
+        <div>
+          <h2 className="threads-title">The <em>Spine</em></h2>
+          <div className="threads-sub">Every thread, laid out in time · captures as beads · signals in gold</div>
+        </div>
+        <div className="threads-legend">
+          <div className="leg-item"><span className="d reg" /> Capture</div>
+          <div className="leg-item"><span className="d sig" /> Signal</div>
+          <div className="leg-item"><span className="piv" /> Pivot</div>
+        </div>
+      </div>
+
+      <div className="threads-spines">
+        {THREADS_DATA.map((t, i) => (
+          <div key={t.id} className={'spine ' + (t.kind === 'project' ? 'project' : '')}>
+            <div className="meta">
+              <div className="kind"><span className="dot" />{t.label}</div>
+              <div className="name" onClick={() => openThread(t)}>{t.name}</div>
+              <div className="stats">{t.captures} captures · <strong>{t.signals} signals</strong></div>
+            </div>
+            <div className="spine-line">
+              {t.beads.map((b, bi) => (
+                <span key={bi}
+                  className={'bead' + (b.sig ? ' sig' : '') + (b.pivot ? ' pivot' : '')}
+                  style={{left: b.l}}
+                  onClick={() => openThread(t)}
+                />
+              ))}
+              <span className="today-mark" />
+            </div>
+            {i === 0 && t.preview && (
+              <div className="preview">
+                <span className="when">{t.previewWhen}</span>{t.preview}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {activeThread && (
+        <div className="thread-detail">
+          <button className="back" onClick={closeThread}>← back to all threads</button>
+          <div className="crumbs">
+            {activeThread.detail.crumb && <><span className="g">◎ {activeThread.detail.crumb}</span><span className="sep">/</span></>}
+            <span>{activeThread.name}</span>
+          </div>
+          <h3>{activeThread.name}</h3>
+          <div style={{fontFamily:'var(--f-italic)', fontStyle:'italic', fontSize:17, color:'var(--ink-3)', maxWidth:560, lineHeight:1.55}}>
+            {activeThread.detail.sub}
+          </div>
+          <div className="stats-row">
+            {activeThread.detail.stats.map(s => (
+              <div key={s.l} className="stat">
+                <div className="n">{s.n}</div>
+                <div className="l">{s.l}</div>
+              </div>
+            ))}
+          </div>
+          <div className="wk-signals">
+            {activeThread.detail.signals.map((s, i) => (
+              <div key={i} className="wk-signal">
+                <span className="when">{s.when}</span>
+                <span className="txt">{s.txt}</span>
+                <span className="ctx">{s.ctx}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Timeline view (C) ───
+const WEEKS_2026 = [
+  {total:8,sig:2},{total:12,sig:0},{total:18,sig:4},{total:6,sig:0},{total:15,sig:3},
+  {total:20,sig:5},{total:9,sig:1},{total:14,sig:2},{total:22,sig:6},{total:11,sig:2},
+  {total:16,sig:3},{total:25,sig:7},{total:8,sig:1},{total:13,sig:2},{total:19,sig:4},{total:10,sig:2},
+  {total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},
+  {total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},
+  {total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},
+  {total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},
+  {total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},
+  {total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},
+  {total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},{total:0,sig:0},
+  {total:0,sig:0},{total:0,sig:0},
+];
+const CURRENT_WEEK = 16;
+const MONTHS = [
+  {label:'Jan', pct:'0%'},{label:'Feb', pct:'8.5%'},{label:'Mar', pct:'16.5%'},
+  {label:'Apr', pct:'25%'},{label:'May', pct:'33%'},{label:'Jun', pct:'41.5%'},
+  {label:'Jul', pct:'50%'},{label:'Aug', pct:'58.5%'},{label:'Sep', pct:'66.5%'},
+  {label:'Oct', pct:'75%'},{label:'Nov', pct:'83%'},{label:'Dec', pct:'91.5%'},
+];
+const PIVOTS_2026 = [
+  {label:'Went full-time', pct:'18%'},
+  {label:'Pricing pivot', pct:'44%'},
+];
+const RIBBONS = [
+  {type:'goal', label:'Build a business'},
+  {type:'project', label:'Throughline launch', right:'60%'},
+  {type:'goal', label:'Write every day'},
+  {type:'goal', label:'Present with family'},
+  {type:'project', label:'Ember Co. · Q2', left:'48%', right:'18%'},
+];
+const WEEK_SIGNALS = {
+  11: [{when:'Apr 15',txt:"The 'organizing tax' on notes is why I stop journaling.",ctx:'#insight'},{when:'Apr 14',txt:'Talked to Mateo about pricing.',ctx:'#pricing'}],
+  15: [{when:'Apr 13',txt:'Shipped landing v1.',ctx:'#ship'}],
+};
+
+function TimelineView() {
+  const [activeYear, setActiveYear] = useState(2026);
+  const [selectedWk, setSelectedWk] = useState(CURRENT_WEEK - 1);
+  const years = [2023, 2024, 2025, 2026];
+
+  const weeks = activeYear === 2026 ? WEEKS_2026 : Array(52).fill({total:0,sig:0});
+
+  function selectWk(i) { setSelectedWk(i); }
+  function cycleYear(dir) {
+    const idx = years.indexOf(activeYear);
+    const next = years[(idx + dir + years.length) % years.length];
+    setActiveYear(next);
+  }
+
+  const signals = WEEK_SIGNALS[selectedWk] || [];
+
+  return (
+    <div className="tl">
+      <div className="tl-head">
+        <div>
+          <h3>The year in <em>one line</em>.</h3>
+          <div style={{fontFamily:'var(--f-mono)', fontSize:10, letterSpacing:'0.18em', textTransform:'uppercase', color:'var(--ink-4)', marginTop:6}}>
+            Density above · Pivots on the line · Ribbons for what was live
+          </div>
+        </div>
+        <div className="range">
+          <button className="nav-btn" onClick={() => cycleYear(-1)}>‹</button>
+          <span>{activeYear}</span>
+          <button className="nav-btn" onClick={() => cycleYear(1)}>›</button>
+        </div>
+      </div>
+
+      <div className="tl-years">
+        {years.map(y => (
+          <button key={y} className={'yr ' + (activeYear === y ? 'on' : '')} onClick={() => setActiveYear(y)}>{y}</button>
+        ))}
+      </div>
+
+      <div className="tl-ribbons">
+        {RIBBONS.map((r, i) => (
+          <div key={i} className={'tl-ribbon ' + r.type}>
+            <span className="rib-label"><span className="d" />{r.label}</span>
+            <span className="band" style={r.left ? {left:r.left, right: r.right||0} : {right: r.right||0}} />
+          </div>
+        ))}
+      </div>
+
+      <div className="year-line" style={{position:'relative'}}>
+        <div className="year-left-label">Week activity</div>
+        <div className="year-bars">
+          {weeks.map((w, i) => {
+            const isFuture = i >= CURRENT_WEEK;
+            const isOn = i === selectedWk;
+            return (
+              <div key={i} className={'wk ' + (isFuture ? 'future ' : '') + (isOn ? 'on' : '')} onClick={() => selectWk(i)}>
+                {w.sig > 0 && <div className="blk sig" style={{height: Math.max(w.sig * 2, 2) + 'px'}} />}
+                <div className="blk" style={{height: Math.max((w.total - w.sig) * 2, w.total > 0 ? 2 : 0) + 'px'}} />
+              </div>
+            );
+          })}
+        </div>
+        <div className="year-pivots">
+          {activeYear === 2026 && PIVOTS_2026.map((p, i) => (
+            <div key={i} className="year-pivot" style={{left: p.pct}}>
+              <span className="lbl">{p.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="year-axis">
+          {MONTHS.map(m => (
+            <span key={m.label} className="month" style={{left: m.pct}}>{m.label}</span>
+          ))}
+        </div>
+      </div>
+
+      <div className="tl-week-detail">
+        <div className="wk-head">
+          <h4 className="wk-title">Week {selectedWk + 1} · {activeYear}</h4>
+          <div className="wk-stats">
+            {weeks[selectedWk]?.total || 0} captures · {weeks[selectedWk]?.sig || 0} signals
+          </div>
+        </div>
+        {signals.length > 0 ? (
+          <div className="wk-signals">
+            {signals.map((s, i) => (
+              <div key={i} className="wk-signal">
+                <span className="when">{s.when}</span>
+                <span className="txt">{s.txt}</span>
+                <span className="ctx">{s.ctx}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{fontFamily:'var(--f-display)', fontStyle:'italic', color:'var(--ink-4)', fontSize:15}}>
+            {weeks[selectedWk]?.total > 0 ? 'No signals this week — the captures are there, but nothing rose to signal level.' : 'Nothing captured yet — this week is still ahead.'}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -561,5 +943,6 @@ function TweaksPanel({ open, onClose, tweaks, setTweak }) {
 
 Object.assign(window, {
   Masthead, BigLineBar, Capture, FilterBar, Entry, PivotMarker, Minimap,
-  WeeklyReview, Sidebar, TweaksPanel, Icon, formatDay, formatTime,
+  WeeklyReview, Sidebar, TweaksPanel, ComposerModal, ThreadsView, TimelineView,
+  Icon, formatDay, formatTime,
 });
