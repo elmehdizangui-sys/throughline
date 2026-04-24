@@ -60,11 +60,36 @@ function FilterBar({
   filter,
   setFilter,
   count,
+  allTags,
+  onTagFilter,
 }: {
   filter: FeedFilter;
   setFilter: (next: FeedFilter) => void;
   count: number;
+  allTags: string[];
+  onTagFilter: (tag: string) => void;
 }) {
+  const [tagOpen, setTagOpen] = useState(false);
+  const [tagSearch, setTagSearch] = useState("");
+  const tagRef = useRef<HTMLDivElement>(null);
+
+  const filteredTags = useMemo(() => {
+    const q = tagSearch.toLowerCase().trim();
+    return q ? allTags.filter((t) => t.includes(q)) : allTags;
+  }, [allTags, tagSearch]);
+
+  useEffect(() => {
+    if (!tagOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (tagRef.current && !tagRef.current.contains(e.target as Node)) {
+        setTagOpen(false);
+        setTagSearch("");
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [tagOpen]);
+
   return (
     <div className="filter-bar">
       <span className="h">Captures - {count}</span>
@@ -81,6 +106,46 @@ function FilterBar({
         <button className={`pill ${filter === "code" ? "active" : ""}`} onClick={() => setFilter("code")}>
           Code
         </button>
+        <div className="tag-filter-anchor" ref={tagRef}>
+          <button
+            className={`pill ${tagOpen ? "active" : ""}`}
+            onClick={() => { setTagOpen((o) => !o); setTagSearch(""); }}
+            type="button"
+          >
+            # Tags
+          </button>
+          {tagOpen && (
+            <div className="tag-filter-dropdown">
+              <input
+                className="tag-filter-search"
+                type="text"
+                placeholder="Search tags…"
+                value={tagSearch}
+                onChange={(e) => setTagSearch(e.target.value)}
+                autoFocus
+              />
+              <div className="tag-filter-list">
+                {filteredTags.length === 0 && (
+                  <span className="tag-filter-empty">No tags found</span>
+                )}
+                {filteredTags.map((tag) => (
+                  <button
+                    key={tag}
+                    className="tag-filter-item"
+                    type="button"
+                    onClick={() => {
+                      onTagFilter(tag);
+                      setTagOpen(false);
+                      setTagSearch("");
+                    }}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -824,6 +889,14 @@ export function FeedView({
   const [quickHeartState, setQuickHeartState] = useState<HeartState | null>(null);
   const trimmedGreetingName = greetingName?.trim();
 
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    for (const entry of entries) {
+      for (const tag of entry.tags ?? []) tagSet.add(tag);
+    }
+    return Array.from(tagSet).sort();
+  }, [entries]);
+
   return (
     <main className="main">
       <div className="dateline">
@@ -854,7 +927,13 @@ export function FeedView({
         onPriorityChange={setQuickPriority}
         onHeartStateChange={setQuickHeartState}
       />
-      <FilterBar filter={filter} setFilter={setFilter} count={filteredEntries.filter((entry) => !entry.isPivot).length} />
+      <FilterBar
+        filter={filter}
+        setFilter={setFilter}
+        count={filteredEntries.filter((entry) => !entry.isPivot).length}
+        allTags={allTags}
+        onTagFilter={(tag) => onSetContextFilter({ type: "tag", id: tag, label: `#${tag}` })}
+      />
 
       {contextFilter ? (
         <div className="filter-context">

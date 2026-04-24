@@ -1,7 +1,24 @@
 import { NextResponse } from "next/server";
-import { createEntry } from "@/lib/throughline-service";
+import { createEntry, listEntriesByTag } from "@/lib/throughline-service";
 import { getAuthUser } from "@/lib/auth";
 import type { CreateEntryPayload, ThroughlineLink } from "@/lib/types";
+
+export async function GET(request: Request) {
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(request.url);
+  const tag = searchParams.get("tag");
+  if (!tag) return NextResponse.json({ message: "tag query param required" }, { status: 400 });
+
+  try {
+    const entries = await listEntriesByTag(tag);
+    return NextResponse.json(entries);
+  } catch (error) {
+    console.error("Failed to fetch entries by tag", error);
+    return NextResponse.json({ message: "Unable to fetch entries." }, { status: 500 });
+  }
+}
 
 function isValidPriority(value: unknown): value is CreateEntryPayload["priority"] {
   return value === undefined || value === "dunya" || value === "akhirah";

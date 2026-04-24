@@ -60,6 +60,8 @@ export function ThroughlineHomePage() {
   const [view, setView] = useState<MainView>("feed");
   const [filter, setFilter] = useState<FeedFilter>("all");
   const [contextFilter, setContextFilter] = useState<ThroughlineContextFilter | null>(null);
+  const [tagEntries, setTagEntries] = useState<ThroughlineEntry[] | null>(null);
+  const [tagEntriesLoading, setTagEntriesLoading] = useState(false);
 
   const [threadsData, setThreadsData] = useState<ThroughlineThreadsView | null>(null);
   const [threadsLoading, setThreadsLoading] = useState(false);
@@ -463,14 +465,33 @@ export function ThroughlineHomePage() {
     }
   }, [commitments]);
 
+  useEffect(() => {
+    if (contextFilter?.type !== "tag") {
+      setTagEntries(null);
+      return;
+    }
+    let cancelled = false;
+    setTagEntriesLoading(true);
+    fetch(`/api/entries?tag=${encodeURIComponent(contextFilter.id)}`)
+      .then((r) => r.json())
+      .then((data: ThroughlineEntry[]) => {
+        if (!cancelled) setTagEntries(data);
+      })
+      .catch(() => { if (!cancelled) setTagEntries([]); })
+      .finally(() => { if (!cancelled) setTagEntriesLoading(false); });
+    return () => { cancelled = true; };
+  }, [contextFilter]);
+
   const filtered = useMemo(() => {
-    let list = entries.filter((entry) => !entry.archived);
-    if (contextFilter) {
+    const base = contextFilter?.type === "tag" && tagEntries !== null
+      ? tagEntries.filter((entry) => !entry.archived)
+      : entries.filter((entry) => !entry.archived);
+    let list = base;
+    if (contextFilter && contextFilter.type !== "tag") {
       list = list.filter((entry) => {
         if (entry.isPivot) return false;
         if (contextFilter.type === "goal") return (entry.goals ?? []).includes(contextFilter.id);
         if (contextFilter.type === "project") return (entry.projects ?? []).includes(contextFilter.id);
-        if (contextFilter.type === "tag") return (entry.tags ?? []).includes(contextFilter.id);
         return true;
       });
     }
@@ -478,7 +499,7 @@ export function ThroughlineHomePage() {
     if (filter === "links") list = list.filter((entry) => entry.link || /https?:\/\//.test(getEntryPlainText(entry.content)));
     if (filter === "code") list = list.filter((entry) => entry.isCode);
     return list;
-  }, [entries, filter, contextFilter]);
+  }, [entries, tagEntries, filter, contextFilter]);
 
   const grouped = useMemo(() => {
     const groups: Array<{ day: string; items: ThroughlineEntry[] }> = [];

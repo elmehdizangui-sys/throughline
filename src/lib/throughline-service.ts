@@ -264,6 +264,17 @@ export async function getBootstrapData(): Promise<ThroughlineBootstrap> {
   };
 }
 
+export async function listEntriesByTag(tag: string): Promise<ThroughlineEntry[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("throughline_entries")
+    .select("*")
+    .contains("tags", [tag])
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(mapEntryRow);
+}
+
 export async function listEntriesPage(cursor?: string): Promise<{ entries: ThroughlineEntry[]; hasMore: boolean }> {
   const supabase = getSupabaseAdmin();
   let query = supabase
