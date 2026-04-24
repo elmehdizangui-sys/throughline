@@ -21,7 +21,7 @@ export function WeeklyReview({
   onPatchHeart?: (id: string, state: HeartState) => void;
 }) {
   const candidates = useMemo(
-    () => entries.filter((entry) => !entry.isPivot && !entry.starred && !entry.archived).slice(0, 8),
+    () => entries.filter((entry) => !entry.isPivot && !entry.starred && !entry.archived),
     [entries],
   );
   const [index, setIndex] = useState(0);

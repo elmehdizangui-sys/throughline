@@ -14,6 +14,7 @@ import {
   CodeBlock,
   encodeBlockNoteContent,
   extractTags,
+  formatDay,
   formatTime,
   getEntryPlainText,
   Icon,
@@ -216,7 +217,6 @@ function Entry({
 
 function PivotMarker({ pivot }: { pivot: ThroughlineEntry }) {
   const hasTransition = Boolean(pivot.from && pivot.to);
-  const label = pivot.pivotLabel || pivot.to || getEntryPlainText(pivot.content) || "Pivot";
 
   return (
     <div className="pivot">
@@ -230,7 +230,9 @@ function PivotMarker({ pivot }: { pivot: ThroughlineEntry }) {
             <span className="from">{pivot.from}</span> -&gt; <span className="to">{pivot.to}</span>
           </>
         ) : (
-          <span className="to">{label}</span>
+          <div className="to">
+            {pivot.content ? renderContent(pivot.content) : (pivot.pivotLabel || pivot.to || "Pivot")}
+          </div>
         )}
       </div>
     </div>
@@ -897,6 +899,51 @@ export function FeedView({
                 />
               ),
             )}
+          </div>
+        ))}
+      </div>
+    </main>
+  );
+}
+
+export function ArchivedView({ entries }: { entries: ThroughlineEntry[] }) {
+  const grouped = useMemo(() => {
+    const groups: Array<{ day: string; items: ThroughlineEntry[] }> = [];
+    let current: { day: string; items: ThroughlineEntry[] } | null = null;
+    for (const entry of entries) {
+      const day = formatDay(entry.created_at);
+      if (!current || current.day !== day) {
+        current = { day, items: [] };
+        groups.push(current);
+      }
+      current.items.push(entry);
+    }
+    return groups;
+  }, [entries]);
+
+  return (
+    <main className="main">
+      <div className="filter-bar">
+        <span className="h">Archived — {entries.length}</span>
+      </div>
+      <div className="feed">
+        {grouped.length === 0 && <div className="empty">No archived entries.</div>}
+        {grouped.map((group) => (
+          <div key={group.day}>
+            <div className="day-divider">
+              <span>{group.day}</span>
+              <span className="rule" />
+              <span>{group.items.length}</span>
+            </div>
+            {group.items.map((entry) => (
+              <article key={entry.id} className="entry">
+                <span className="timestamp">{formatTime(entry.created_at)}</span>
+                <span className="dot" />
+                <div className="content">
+                  {entry.isCode ? <CodeBlock content={entry.content} /> : renderContent(entry.content)}
+                </div>
+              </article>
+            ))}
           </div>
         ))}
       </div>

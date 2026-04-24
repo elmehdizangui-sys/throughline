@@ -235,13 +235,6 @@ export function ThreadsView({ data, isLoading, entries, akhirahLens }: ThreadsVi
                     ))}
                     <span className="today-mark" aria-hidden="true" />
                   </div>
-
-                  {row.latest_signal && (
-                    <div className="preview">
-                      <span className="when">{formatDate(row.latest_signal.created_at)}</span>
-                      {renderContent(row.latest_signal.content)}
-                    </div>
-                  )}
                 </div>
               );
             });

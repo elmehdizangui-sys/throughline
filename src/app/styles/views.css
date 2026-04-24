@@ -416,11 +416,11 @@
   width: 100%;
   font-family: var(--f-display);
   font-weight: 500;
-  font-size: clamp(18px, 2.2vw, 28px);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  font-size: clamp(15px, 1.6vw, 20px);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
   color: var(--ink);
-  margin: 5px 0 7px;
+  margin: 4px 0 6px;
   cursor: pointer;
   transition: color 0.12s;
   background: none;
@@ -448,7 +448,7 @@
 
 .spine-line {
   position: relative;
-  height: 68px;
+  height: 52px;
   display: flex;
   align-items: center;
 }
@@ -608,7 +608,12 @@
 
 .capture-detail.muted {
   color: var(--ink-4);
-  background: var(--paper-2);
+  background: transparent;
+  border-color: transparent;
+  font-size: 13px;
+  font-family: var(--f-mono);
+  font-style: italic;
+  padding: 4px 0;
 }
 
 /* ─── Signals block ───────────────────────────────────────────────────────── */

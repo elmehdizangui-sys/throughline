@@ -21,7 +21,7 @@ import type {
   ThroughlineWeekCommitment,
 } from "@/lib/types";
 import { LeftSidebar, RightSidebar } from "@/features/throughline/chrome";
-import { FeedView } from "@/features/throughline/feed";
+import { ArchivedView, FeedView } from "@/features/throughline/feed";
 import { formatDay, getEntryPlainText } from "@/features/throughline/shared";
 import { ThreadsView } from "@/features/throughline/threads-view";
 import { TimelineView } from "@/features/throughline/timeline-view";
@@ -464,7 +464,7 @@ export function ThroughlineHomePage() {
   }, [commitments]);
 
   const filtered = useMemo(() => {
-    let list = entries;
+    let list = entries.filter((entry) => !entry.archived);
     if (contextFilter) {
       list = list.filter((entry) => {
         if (entry.isPivot) return false;
@@ -687,6 +687,10 @@ export function ThroughlineHomePage() {
           ) : null}
 
           {view === "review" ? <MuhasabahView /> : null}
+
+          {view === "archived" ? (
+            <ArchivedView entries={entries.filter((e) => e.archived && !e.isPivot)} />
+          ) : null}
         </div>
 
         <RightSidebar

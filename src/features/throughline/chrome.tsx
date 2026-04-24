@@ -76,6 +76,17 @@ const NAV_ITEMS: readonly NavItem[] = [
       </svg>
     ),
   },
+  {
+    id: "archived",
+    label: "Archived",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+        <rect x="2" y="5" width="12" height="9" rx="1" />
+        <path d="M1 5h14M6 9h4" strokeLinecap="round" />
+        <path d="M5.5 2h5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
 ] as const;
 
 export interface LeftSidebarProps {
